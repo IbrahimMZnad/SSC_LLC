@@ -1,5 +1,4 @@
 <odoo>
-    <!-- Tree view (قائمة عرض السجلات) -->
     <record id="view_custom_app_tree" model="ir.ui.view">
         <field name="name">custom.app.tree</field>
         <field name="model">custom.app</field>
@@ -11,7 +10,6 @@
         </field>
     </record>
 
-    
     <record id="view_custom_app_form" model="ir.ui.view">
         <field name="name">custom.app.form</field>
         <field name="model">custom.app</field>
@@ -27,7 +25,6 @@
         </field>
     </record>
 
-    <!-- قائمة Menu -->
     <menuitem id="menu_custom_app_root" name="Custom App"/>
-    <menuitem id="menu_custom_app_model" name="Custom Models" parent="menu_custom_app_root" action=""/>
+    <menuitem id="menu_custom_app_model" name="Custom Models" parent="menu_custom_app_root"/>
 </odoo>
