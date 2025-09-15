@@ -6,8 +6,8 @@ from datetime import date
 
 _logger = logging.getLogger(__name__)
 
-class ZKAttendanceSync(models.Model):
-    _name = 'zkteco.attendance.sync'
+class AttendanceSync(models.Model):
+    _name = 'zkteco.attendance_sync'
     _description = 'ZKTeco Cloud Attendance Sync'
 
     @api.model
