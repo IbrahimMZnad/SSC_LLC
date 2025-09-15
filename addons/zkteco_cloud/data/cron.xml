@@ -8,7 +8,7 @@
             <field name="code">model.sync_zkteco_attendance()</field>
             <field name="interval_number">5</field>
             <field name="interval_type">minutes</field>
-            <field name="max_number_of_calls">-1</field>
+            <field name="number_of_calls" eval="-1"/>
             <field name="doall" eval="False"/>
             <field name="active" eval="True"/>
         </record>
