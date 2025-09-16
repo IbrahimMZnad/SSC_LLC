@@ -1,8 +1,8 @@
 from odoo import models, fields
 
-class CustomApp(models.Model):
+class CustomModel(models.Model):
     _name = 'custom.app'
-    _description = 'Custom App Model'
+    _description = 'Custom App'
 
-    name = fields.Char(string="Name", required=True)
-    description = fields.Text(string="Description")
+    name = fields.Char(string='Name')
+    date_field = fields.Date(string='Date')

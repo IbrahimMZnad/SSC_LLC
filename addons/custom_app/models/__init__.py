@@ -1,1 +1,1 @@
-from . import custom_app_models
+from . import custom_model

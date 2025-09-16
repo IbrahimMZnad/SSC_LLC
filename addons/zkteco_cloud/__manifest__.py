@@ -1,15 +1,14 @@
 {
-    'name': 'ZKTeco Cloud Sync',
+    'name': 'ZKTeco Cloud',
     'version': '1.0',
-    'summary': 'Sync attendance data from ZKTeco Cloud to Odoo',
-    'description': 'Fetch attendance logs from ZKTeco Cloud and update x_daily_attendance.',
-    'author': 'Ibrahim MZnad',
-    'website': 'https://yourcompany.com',
-    'category': 'Human Resources',
-    'depends': ['base', 'hr'],
+    'summary': 'Manage ZKTeco Attendance',
+    'description': 'Module to sync ZKTeco attendance with Odoo',
+    'author': 'Ibrahim Elzenad',
+    'depends': ['base'],
     'data': [
-        'data/cron.xml',
-    ],
+    'views/zkteco_attendance_views.xml',
+],
+
     'installable': True,
-    'application': False,
+    'application': True,
 }

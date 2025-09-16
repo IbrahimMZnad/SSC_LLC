@@ -1,38 +1,37 @@
 <odoo>
-    <!-- Tree View -->
-    <record id="view_custom_app_tree" model="ir.ui.view">
-        <field name="name">custom.app.tree</field>
-        <field name="model">custom.app</field>
-        <field name="type">tree</field>
-        <field name="arch" type="xml">
-            <tree>
-                <field name="name"/>
-                <field name="description"/>
-            </tree>
-        </field>
-    </record>
-
-    <!-- Form View -->
     <record id="view_custom_app_form" model="ir.ui.view">
         <field name="name">custom.app.form</field>
         <field name="model">custom.app</field>
-        <field name="type">form</field>
         <field name="arch" type="xml">
-            <form>
+            <form string="Custom App">
                 <sheet>
                     <group>
                         <field name="name"/>
-                        <field name="description"/>
+                        <field name="date_field"/>
                     </group>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <!-- Menu -->
+    <record id="view_custom_app_tree" model="ir.ui.view">
+        <field name="name">custom.app.tree</field>
+        <field name="model">custom.app</field>
+        <field name="arch" type="xml">
+            <tree string="Custom App">
+                <field name="name"/>
+                <field name="date_field"/>
+            </tree>
+        </field>
+    </record>
+
     <menuitem id="menu_custom_app_root" name="Custom App"/>
-    <menuitem id="menu_custom_app_model"
-              name="Custom Models"
-              parent="menu_custom_app_root"
-              action=""/>
+
+    <menuitem id="menu_custom_app" name="Entries" parent="menu_custom_app_root" action="action_custom_app"/>
+
+    <record id="action_custom_app" model="ir.actions.act_window">
+        <field name="name">Custom App</field>
+        <field name="res_model">custom.app</field>
+        <field name="view_mode">tree,form</field>
+    </record>
 </odoo>
