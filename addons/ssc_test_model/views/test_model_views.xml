@@ -1,0 +1,27 @@
+<odoo>
+    <record id="view_ssc_test_model_tree" model="ir.ui.view">
+        <field name="name">ssc.test.model.tree</field>
+        <field name="model">ssc.test.model</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="description"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ssc_test_model_form" model="ir.ui.view">
+        <field name="name">ssc.test.model.form</field>
+        <field name="model">ssc.test.model</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="description"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
