@@ -7,9 +7,9 @@
     'category': 'Tools',
     'depends': ['base'],
     'data': [
-        'views/test_model_views.xml',
-        'views/test_model_menu.xml',
-    ],
+    'views/test_model_views.xml',
+],
+
     'application': True,
     'installable': True,
     'auto_install': False,
