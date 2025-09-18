@@ -8,7 +8,7 @@
     'depends': ['base'],
     'data': [
         'views/test_model_views.xml',
-        'views/test_model_action.xml',
+        'views/test_model_menu.xml',
     ],
     'application': True,
     'installable': True,
