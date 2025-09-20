@@ -7,6 +7,7 @@ class SolO2M(models.Model):
 
     name = fields.Char(string="Name")
     employee_id = fields.Many2one('hr.employee', string="Employee")
+    attendance_id = fields.Char(string="Attendance ID")  # تم تعديل النوع Char
 
 class ExternalAttendance(models.Model):
     _name = "ssc.external.attendance"
@@ -24,10 +25,13 @@ class ExternalAttendance(models.Model):
 
     @api.model
     def create(self, vals):
-        # تحديد نوع اليوم تلقائياً
         today = date.today()
-        if today.weekday() == 4:  # الجمعة في Python weekday=4
+        if today.weekday() == 4:  # الجمعة weekday=4
             vals['day_type'] = 'off'
         else:
             vals['day_type'] = 'regular'
+        if 'name' not in vals or not vals['name']:
+            vals['name'] = today.strftime('%Y-%m-%d')
+        if 'date_field' not in vals or not vals['date_field']:
+            vals['date_field'] = today
         return super().create(vals)
