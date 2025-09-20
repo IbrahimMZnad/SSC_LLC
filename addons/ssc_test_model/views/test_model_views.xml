@@ -17,13 +17,13 @@
     </record>
 
     <!-- List View -->
-    <record id="view_tree_ssc_test_simple" model="ir.ui.view">
-        <field name="name">ssc.test.simple.tree</field>
+    <record id="view_list_ssc_test_simple" model="ir.ui.view">
+        <field name="name">ssc.test.simple.list</field>
         <field name="model">ssc.test.simple</field>
         <field name="arch" type="xml">
-            <tree string="Simple Test List">
+            <list string="Simple Test List">
                 <field name="name"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -39,8 +39,8 @@
     <record id="action_ssc_test_simple_list" model="ir.actions.act_window">
         <field name="name">List Menu</field>
         <field name="res_model">ssc.test.simple</field>
-        <field name="view_mode">tree</field>
-        <field name="view_id" ref="view_tree_ssc_test_simple"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_list_ssc_test_simple"/>
     </record>
 
     <!-- Parent Main Menu -->
