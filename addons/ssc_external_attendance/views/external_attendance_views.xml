@@ -1,4 +1,5 @@
 <odoo>
+    <!-- Form View -->
     <record id="view_form_external_attendance" model="ir.ui.view">
         <field name="name">ssc.external.attendance.form</field>
         <field name="model">ssc.external.attendance</field>
@@ -6,39 +7,28 @@
             <form string="External Attendance">
                 <sheet>
                     <group>
-                        <field name="name" readonly="1"/>
-                        <field name="date_field"/>
+                        <!-- حقل التاريخ (افتراضياً تاريخ اليوم) -->
+                        <field name="date_field" readonly="1"/>
+
+                        <!-- Radio Button Type -->
                         <field name="day_type" widget="radio"/>
+
+                        <!-- باقي الحقول -->
+                        <field name="name"/>
                     </group>
 
-                    <field name="attendance_sheet">
-                        <list editable="bottom">
-                            <field name="name"/>
-                        </list>
-                    </field>
+                    <!-- One2many Lines -->
+                    <notebook>
+                        <page string="Attendance Lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="attendance_id"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
-
-    <record id="view_tree_external_attendance" model="ir.ui.view">
-        <field name="name">ssc.external.attendance.tree</field>
-        <field name="model">ssc.external.attendance</field>
-        <field name="arch" type="xml">
-            <tree>
-                <field name="name"/>
-                <field name="date_field"/>
-                <field name="day_type"/>
-            </tree>
-        </field>
-    </record>
-
-    <record id="action_external_attendance" model="ir.actions.act_window">
-        <field name="name">External Attendance</field>
-        <field name="res_model">ssc.external.attendance</field>
-        <field name="view_mode">tree,form</field>
-    </record>
-
-    <menuitem id="menu_external_attendance_root" name="External Attendance"/>
-    <menuitem id="menu_external_attendance" name="Attendances" parent="menu_external_attendance_root" action="action_external_attendance"/>
 </odoo>
