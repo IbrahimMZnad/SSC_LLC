@@ -1,8 +1,8 @@
 from odoo import models, fields
 
-class SSC_TestModel(models.Model):
-    _name = 'ssc.test.model'
-    _description = 'SSC Test Model'
+class SscTestSimple(models.Model):
+    _name = "ssc.test.simple"
+    _description = "Simple Test Menu"
 
-    name = fields.Char(string='Name', required=True)
-    description = fields.Text(string='Description')
+    date_field = fields.Date(string="Date")
+    is_checked = fields.Boolean(string="Checked")

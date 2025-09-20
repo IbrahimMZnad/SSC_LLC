@@ -1,21 +1,31 @@
 <odoo>
-    <!-- Action -->
-    <record id="action_ssc_test_model" model="ir.actions.act_window">
-        <field name="name">SSC Test Model</field>
-        <field name="res_model">ssc.test.model</field>
-        <field name="view_mode">tree,form</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Create your first SSC Test record
-            </p>
+    <!-- Form View -->
+    <record id="view_form_ssc_test_simple" model="ir.ui.view">
+        <field name="name">ssc.test.simple.form</field>
+        <field name="model">ssc.test.simple</field>
+        <field name="arch" type="xml">
+            <form string="Simple Test Form">
+                <sheet>
+                    <group>
+                        <field name="date_field"/>
+                        <field name="is_checked"/>
+                    </group>
+                </sheet>
+            </form>
         </field>
     </record>
 
-    <!-- Menus -->
-    <menuitem id="menu_ssc_root" name="SSC" sequence="10"/>
-    <menuitem id="menu_ssc_test_model"
-              name="SSC Test"
-              parent="menu_ssc_root"
-              action="action_ssc_test_model"
-              sequence="1"/>
+    <!-- Action -->
+    <record id="action_ssc_test_simple" model="ir.actions.act_window">
+        <field name="name">Simple Menu</field>
+        <field name="res_model">ssc.test.simple</field>
+        <field name="view_mode">form</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_ssc_test_simple"
+              name="Simple Menu"
+              parent="base.menu_custom"
+              action="action_ssc_test_simple"
+              sequence="10"/>
 </odoo>
