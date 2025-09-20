@@ -1,5 +1,4 @@
 <odoo>
-    <!-- Form View -->
     <record id="view_form_external_attendance" model="ir.ui.view">
         <field name="name">ssc.external.attendance.form</field>
         <field name="model">ssc.external.attendance</field>
@@ -7,21 +6,16 @@
             <form string="External Attendance">
                 <sheet>
                     <group>
-                        <!-- حقل التاريخ (افتراضياً تاريخ اليوم) -->
-                        <field name="date_field" readonly="1"/>
-
-                        <!-- Radio Button Type -->
+                        <field name="date_field"/>
                         <field name="day_type" widget="radio"/>
-
-                        <!-- باقي الحقول -->
                         <field name="name"/>
                     </group>
 
-                    <!-- One2many Lines -->
                     <notebook>
                         <page string="Attendance Lines">
                             <field name="line_ids">
                                 <list editable="bottom">
+                                    <field name="name"/>
                                     <field name="attendance_id"/>
                                 </list>
                             </field>
