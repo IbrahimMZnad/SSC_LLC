@@ -1,0 +1,47 @@
+<odoo>
+    <record id="view_form_external_attendance" model="ir.ui.view">
+        <field name="name">ssc.external.attendance.form</field>
+        <field name="model">ssc.external.attendance</field>
+        <field name="arch" type="xml">
+            <form string="External Attendance">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="date_field"/>
+                        <field name="day_type" widget="radio"/>
+                    </group>
+                    <notebook>
+                        <page string="Line One">
+                            <field name="line_one_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="employee_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Line Two">
+                            <field name="line_two_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="employee_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_external_attendance" model="ir.actions.act_window">
+        <field name="name">External Attendance</field>
+        <field name="res_model">ssc.external.attendance</field>
+        <field name="view_mode">form</field>
+    </record>
+
+    <menuitem id="menu_external_attendance_root" name="External Attendance"/>
+    <menuitem id="menu_external_attendance_form" 
+              name="Form" 
+              parent="menu_external_attendance_root" 
+              action="action_external_attendance"/>
+</odoo>
