@@ -7,6 +7,7 @@
             <form string="Simple Test Form">
                 <sheet>
                     <group>
+                        <field name="name"/>
                         <field name="date_field"/>
                         <field name="is_checked"/>
                     </group>
@@ -15,17 +16,47 @@
         </field>
     </record>
 
-    <!-- Action -->
-    <record id="action_ssc_test_simple" model="ir.actions.act_window">
-        <field name="name">Simple Menu</field>
-        <field name="res_model">ssc.test.simple</field>
-        <field name="view_mode">form</field>
+    <!-- List View -->
+    <record id="view_tree_ssc_test_simple" model="ir.ui.view">
+        <field name="name">ssc.test.simple.tree</field>
+        <field name="model">ssc.test.simple</field>
+        <field name="arch" type="xml">
+            <tree string="Simple Test List">
+                <field name="name"/>
+            </tree>
+        </field>
     </record>
 
-    <!-- Menu -->
-    <menuitem id="menu_ssc_test_simple"
-              name="Simple Menu"
-              parent="base.menu_custom"
-              action="action_ssc_test_simple"
+    <!-- Action: Form View -->
+    <record id="action_ssc_test_simple_form" model="ir.actions.act_window">
+        <field name="name">Form Menu</field>
+        <field name="res_model">ssc.test.simple</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_form_ssc_test_simple"/>
+    </record>
+
+    <!-- Action: List View -->
+    <record id="action_ssc_test_simple_list" model="ir.actions.act_window">
+        <field name="name">List Menu</field>
+        <field name="res_model">ssc.test.simple</field>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="view_tree_ssc_test_simple"/>
+    </record>
+
+    <!-- Parent Main Menu -->
+    <menuitem id="menu_ssc_test_root" name="SSC Test" sequence="5"/>
+
+    <!-- Submenu: Form -->
+    <menuitem id="menu_ssc_test_simple_form"
+              name="Form Menu"
+              parent="menu_ssc_test_root"
+              action="action_ssc_test_simple_form"
               sequence="10"/>
+
+    <!-- Submenu: List -->
+    <menuitem id="menu_ssc_test_simple_list"
+              name="List Menu"
+              parent="menu_ssc_test_root"
+              action="action_ssc_test_simple_list"
+              sequence="20"/>
 </odoo>
