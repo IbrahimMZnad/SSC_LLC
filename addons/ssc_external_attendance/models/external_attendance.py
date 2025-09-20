@@ -1,4 +1,4 @@
-from odoo import models, fields, api
+from odoo import models, fields
 from datetime import date
 
 class ExternalAttendance(models.Model):
@@ -16,15 +16,16 @@ class ExternalAttendance(models.Model):
         default="regular"
     )
 
-    # One2many to attendance lines
-    line_ids = fields.One2many("ssc.external.attendance.line", "attendance_ref", string="Attendance Lines")
+    line_ids = fields.One2many(
+        "ssc.external.attendance.line",  # موديل الـ lines
+        "dummy_id",                       # field dummy فقط لتجنب FK
+        string="Attendance Lines"
+    )
 
 
 class ExternalAttendanceLine(models.Model):
     _name = "ssc.external.attendance.line"
     _description = "External Attendance Line"
 
-    name = fields.Char(string="Name")
     attendance_id = fields.Char(string="Attendance ID")
-
-    attendance_ref = fields.Many2one("ssc.external.attendance", string="Attendance Reference")
+    dummy_id = fields.Char()  # هذا موجود فقط لتفادي FK

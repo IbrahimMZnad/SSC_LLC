@@ -6,18 +6,20 @@
             <form string="External Attendance">
                 <sheet>
                     <group>
+                        <field name="name"/>
                         <field name="date_field"/>
                         <field name="day_type" widget="radio"/>
-                        <field name="name"/>
                     </group>
-
                     <notebook>
                         <page string="Attendance Lines">
                             <field name="line_ids">
-                                <list editable="bottom">
-                                    <field name="name"/>
-                                    <field name="attendance_id"/>
-                                </list>
+                                <form string="Line">
+                                    <sheet>
+                                        <group>
+                                            <field name="attendance_id"/>
+                                        </group>
+                                    </sheet>
+                                </form>
                             </field>
                         </page>
                     </notebook>
@@ -25,4 +27,17 @@
             </form>
         </field>
     </record>
+
+    <record id="action_external_attendance" model="ir.actions.act_window">
+        <field name="name">External Attendance</field>
+        <field name="res_model">ssc.external.attendance</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_external_attendance_root" name="External Attendance"/>
+
+    <menuitem id="menu_external_attendance" 
+              name="Attendance" 
+              parent="menu_external_attendance_root"
+              action="action_external_attendance"/>
 </odoo>
