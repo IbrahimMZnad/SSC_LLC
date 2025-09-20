@@ -1,8 +1,8 @@
 {
     'name': 'SSC External Attendance',
     'version': '1.0',
-    'summary': 'External Attendance Module for SSC',
-    'description': 'Handles external attendance with lines.',
+    'summary': 'External Attendance Module',
+    'description': 'A simple module for external attendance records',
     'author': 'Ibrahim Alznad',
     'category': 'Human Resources',
     'depends': ['base'],
