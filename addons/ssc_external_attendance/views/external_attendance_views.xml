@@ -1,5 +1,5 @@
 <odoo>
-    <!-- Main Form -->
+    <!-- Form view -->
     <record id="view_form_external_attendance" model="ir.ui.view">
         <field name="name">ssc.external.attendance.form</field>
         <field name="model">ssc.external.attendance</field>
@@ -15,8 +15,7 @@
                         <page string="Lines">
                             <field name="line_ids">
                                 <tree editable="bottom">
-                                    <field name="employee"/>
-                                    <field name="hours"/>
+                                    <!-- فاضي بدون أعمدة -->
                                 </tree>
                             </field>
                         </page>

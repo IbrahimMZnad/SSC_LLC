@@ -11,7 +11,7 @@ class ExternalAttendance(models.Model):
     line_ids = fields.One2many(
         'ssc.external.attendance.line',
         'attendance_id',
-        string="Attendance Lines"
+        string="Lines"
     )
 
 
@@ -23,5 +23,3 @@ class ExternalAttendanceLine(models.Model):
         'ssc.external.attendance',
         string="Attendance"
     )
-    employee = fields.Char(string="Employee Name")
-    hours = fields.Float(string="Worked Hours")
