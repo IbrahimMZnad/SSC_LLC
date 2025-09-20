@@ -1,5 +1,4 @@
 <odoo>
-    <!-- Form View -->
     <record id="view_form_external_attendance" model="ir.ui.view">
         <field name="name">ssc.external.attendance.form</field>
         <field name="model">ssc.external.attendance</field>
@@ -11,18 +10,11 @@
                         <field name="date_field"/>
                         <field name="day_type"/>
                     </group>
+
                     <notebook>
-                        <page string="Line One">
-                            <field name="line_one_ids">
-                                <tree>
-                                    <field name="name"/>
-                                    <field name="attendance_id"/>
-                                </tree>
-                            </field>
-                        </page>
-                        <page string="Line Two">
-                            <field name="line_two_ids">
-                                <tree>
+                        <page string="Attendance Lines">
+                            <field name="att_record">
+                                <tree editable="bottom">
                                     <field name="name"/>
                                     <field name="attendance_id"/>
                                 </tree>
@@ -34,17 +26,24 @@
         </field>
     </record>
 
-    <!-- Action -->
+    <record id="view_tree_external_attendance" model="ir.ui.view">
+        <field name="name">ssc.external.attendance.tree</field>
+        <field name="model">ssc.external.attendance</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="date_field"/>
+                <field name="day_type"/>
+            </tree>
+        </field>
+    </record>
+
     <record id="action_external_attendance" model="ir.actions.act_window">
         <field name="name">External Attendance</field>
         <field name="res_model">ssc.external.attendance</field>
-        <field name="view_mode">form,tree</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
-    <!-- Menu -->
-    <menuitem id="menu_external_attendance"
-              name="External Attendance"
-              parent="base.menu_custom"
-              action="action_external_attendance"
-              sequence="10"/>
+    <menuitem id="menu_external_attendance_root" name="External Attendance"/>
+    <menuitem id="menu_external_attendance" name="Attendances" parent="menu_external_attendance_root" action="action_external_attendance"/>
 </odoo>
