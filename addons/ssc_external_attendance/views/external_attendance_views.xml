@@ -8,7 +8,7 @@
                     <group>
                         <field name="name"/>
                         <field name="date_field"/>
-                        <field name="day_type" widget="radio"/>
+                        <field name="day_type"/>
                     </group>
                     <notebook>
                         <page string="Line One">
@@ -38,12 +38,12 @@
     <record id="action_external_attendance" model="ir.actions.act_window">
         <field name="name">External Attendance</field>
         <field name="res_model">ssc.external.attendance</field>
-        <field name="view_mode">form</field>
+        <field name="view_mode">form,tree</field>
     </record>
 
-    <menuitem id="menu_external_attendance_root" name="External Attendance"/>
-    <menuitem id="menu_external_attendance_form" 
-              name="Form" 
-              parent="menu_external_attendance_root" 
-              action="action_external_attendance"/>
+    <menuitem id="menu_external_attendance"
+              name="External Attendance"
+              parent="base.menu_custom"
+              action="action_external_attendance"
+              sequence="10"/>
 </odoo>

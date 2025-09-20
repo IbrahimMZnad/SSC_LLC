@@ -2,10 +2,10 @@
     'name': 'SSC External Attendance',
     'version': '1.0',
     'summary': 'External Attendance Module for SSC',
-    'description': 'Simple external attendance form for automated lines.',
+    'description': 'Handles external attendance with lines.',
     'author': 'Ibrahim Alznad',
     'category': 'Human Resources',
-    'depends': ['base', 'hr'],
+    'depends': ['base'],
     'data': [
         'views/external_attendance_views.xml',
     ],
