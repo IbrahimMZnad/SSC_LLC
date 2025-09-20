@@ -14,9 +14,9 @@
                     <notebook>
                         <page string="Lines">
                             <field name="line_ids">
-                                <tree editable="bottom">
-                                    <!-- فاضي بدون أعمدة -->
-                                </tree>
+                                <list editable="bottom">
+                                    <!-- intentionally empty -->
+                                </list>
                             </field>
                         </page>
                     </notebook>
@@ -25,16 +25,16 @@
         </field>
     </record>
 
-    <!-- Tree view -->
-    <record id="view_tree_external_attendance" model="ir.ui.view">
-        <field name="name">ssc.external.attendance.tree</field>
+    <!-- List (Tree) view -->
+    <record id="view_list_external_attendance" model="ir.ui.view">
+        <field name="name">ssc.external.attendance.list</field>
         <field name="model">ssc.external.attendance</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name"/>
                 <field name="date"/>
                 <field name="note"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -42,7 +42,7 @@
     <record id="action_external_attendance" model="ir.actions.act_window">
         <field name="name">External Attendance</field>
         <field name="res_model">ssc.external.attendance</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- Menu -->
