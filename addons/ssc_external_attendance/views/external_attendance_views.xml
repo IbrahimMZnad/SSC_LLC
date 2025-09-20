@@ -7,18 +7,16 @@
                 <sheet>
                     <group>
                         <field name="name"/>
-                        <field name="date_field"/>
-                        <field name="day_type" widget="radio"/>
+                        <field name="date"/>
+                        <field name="type"/>
                     </group>
                     <notebook>
                         <page string="Attendance Lines">
                             <field name="line_ids">
                                 <form string="Line">
-                                    <sheet>
-                                        <group>
-                                            <field name="attendance_id"/>
-                                        </group>
-                                    </sheet>
+                                    <group>
+                                        <field name="attendance_id"/>
+                                    </group>
                                 </form>
                             </field>
                         </page>
@@ -28,16 +26,33 @@
         </field>
     </record>
 
-    <record id="action_external_attendance" model="ir.actions.act_window">
-        <field name="name">External Attendance</field>
-        <field name="res_model">ssc.external.attendance</field>
-        <field name="view_mode">tree,form</field>
+    <record id="view_tree_external_attendance" model="ir.ui.view">
+        <field name="name">ssc.external.attendance.tree</field>
+        <field name="model">ssc.external.attendance</field>
+        <field name="arch" type="xml">
+            <tree string="External Attendance">
+                <field name="name"/>
+                <field name="date"/>
+                <field name="type"/>
+            </tree>
+        </field>
     </record>
 
     <menuitem id="menu_external_attendance_root" name="External Attendance"/>
 
     <menuitem id="menu_external_attendance" 
-              name="Attendance" 
-              parent="menu_external_attendance_root"
+              name="Attendances" 
+              parent="menu_external_attendance_root" 
               action="action_external_attendance"/>
+
+    <record id="action_external_attendance" model="ir.actions.act_window">
+        <field name="name">External Attendance</field>
+        <field name="res_model">ssc.external.attendance</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Click to create a new attendance.
+            </p>
+        </field>
+    </record>
 </odoo>
