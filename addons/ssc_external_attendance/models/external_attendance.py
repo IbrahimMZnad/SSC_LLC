@@ -1,4 +1,3 @@
-# models/external_attendance.py
 from odoo import models, fields, api, exceptions
 from datetime import date
 
@@ -20,9 +19,7 @@ class ExternalAttendance(models.Model):
 
     @api.model
     def create_daily_attendance(self):
-        """منشّى بواسطة الـ cron أو يمكن استدعاؤه يدوياً.
-           ينشئ سجل لليوم الواحد فقط ولا يكرر إذا موجود.
-        """
+        """Scheduled by cron: create one attendance record per day."""
         today = fields.Date.context_today(self)
         existing = self.search([('date', '=', today)], limit=1)
         if existing:
@@ -32,37 +29,29 @@ class ExternalAttendance(models.Model):
             'date': today,
             'type': 'Off Day' if today.weekday() == 4 else 'Regular Day'
         }
-        # create() سيستدعي _populate_lines إذا لم تُمرَّر line_ids ضمن vals (انظر override create)
         record = self.create(vals)
         return record
 
     @api.model
     def create(self, vals):
-        """Override create: لو ما في line_ids في vals نعمل populate تلقائياً."""
         record = super().create(vals)
-        # إذا المنشأ بدون خطٍ واحد، نضيف كل الموظفين تلقائياً
         if not vals.get('line_ids'):
             record._populate_lines()
         return record
 
     def _populate_lines(self):
-        """يملىء self.line_ids بقائمة الموظفين من x_employeeslist مع attendance_id و company."""
+        """Populate lines with all employees except Engineer Office Staff."""
         self.ensure_one()
         Employee = self.env['x_employeeslist']
-        employees = Employee.search([])
-        if not employees:
-            return
+        employees = Employee.search([('x_studio_engineeroffice_staff', '!=', True)])
         lines = []
         for emp in employees:
-            # emp.x_studio_company قد يكون many2one لـ res.company أو False
             lines.append((0, 0, {
                 'employee_id': emp.id,
-                'attendance_id': emp.x_studio_attendance_id or '',
-                # company_id هو compute أيضاً، لكن ممكن تعبيها هنا إن أردت:
+                'attendance_id': emp.x_studio_attendance_id or '',  # Copy Char field
                 'company_id': emp.x_studio_company.id if getattr(emp, 'x_studio_company', False) else False,
             }))
         if lines:
-            # write سيضيف السطور للموديل الأب
             self.write({'line_ids': lines})
 
 
@@ -71,9 +60,9 @@ class ExternalAttendanceLine(models.Model):
     _description = "External Attendance Line"
 
     external_id = fields.Many2one('ssc.external.attendance', string="Attendance Reference", ondelete='cascade')
-    attendance_id = fields.Char(string="Attendance ID")   # من employee.x_studio_attendance_id
     employee_id = fields.Many2one('x_employeeslist', string="Employee", required=True)
     company_id = fields.Many2one('res.company', string="Company", compute="_compute_company", store=True)
+    attendance_id = fields.Char(string="Attendance ID")  # from employee.x_studio_attendance_id
 
     first_punch = fields.Datetime(string="First Punch")
     last_punch = fields.Datetime(string="Last Punch")
@@ -84,7 +73,6 @@ class ExternalAttendanceLine(models.Model):
     @api.constrains('employee_id')
     def _check_employee_company(self):
         for rec in self:
-            # إذا الموظف ما عنده x_studio_company نمنع الحفظ
             if rec.employee_id and not getattr(rec.employee_id, 'x_studio_company', False):
                 raise exceptions.ValidationError(
                     "Employee %s has no company assigned (x_studio_company)." % (rec.employee_id.display_name,)
@@ -115,7 +103,6 @@ class ExternalAttendanceLine(models.Model):
             if not rec.first_punch:
                 rec.absent = True
             else:
-                # تأكد من شكل الوقت؛ إذا الساعة والدقيقة = 00:00 اعتبر غائب
                 try:
                     rec.absent = rec.first_punch.strftime("%H:%M") == "00:00"
                 except Exception:
