@@ -15,6 +15,12 @@
                             <field name="line_ids">
                                 <list editable="bottom">
                                     <field name="attendance_id"/>
+                                    <field name="employee_name"/>
+                                    <field name="first_punch"/>
+                                    <field name="last_punch"/>
+                                    <field name="total_time" readonly="1"/>
+                                    <field name="total_ot" readonly="1"/>
+                                    <field name="absent" readonly="1"/>
                                 </list>
                             </field>
                         </page>
