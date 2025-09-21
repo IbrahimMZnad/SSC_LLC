@@ -15,7 +15,8 @@
                             <field name="line_ids">
                                 <list editable="bottom">
                                     <field name="attendance_id"/>
-                                    <field name="employee_name"/>
+                                    <field name="employee_id"/>
+                                    <field name="company_id" readonly="1"/>
                                     <field name="first_punch"/>
                                     <field name="last_punch"/>
                                     <field name="total_time" readonly="1"/>

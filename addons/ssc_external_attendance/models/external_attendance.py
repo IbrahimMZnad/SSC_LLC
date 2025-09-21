@@ -22,8 +22,12 @@ class ExternalAttendanceLine(models.Model):
     external_id = fields.Many2one('ssc.external.attendance', string="Attendance Reference", ondelete='cascade')
     attendance_id = fields.Char(string="Attendance ID")
 
-    # الحقول الجديدة
-    employee_name = fields.Char(string="Employee Name")
+    # التعديل الجديد: ربط الموظف
+    employee_id = fields.Many2one('x_employeeslist', string="Employee")
+
+    # الحقل الجديد: الشركة
+    company_id = fields.Many2one('res.company', string="Company", compute="_compute_company", store=True)
+
     first_punch = fields.Datetime(string="First Punch")
     last_punch = fields.Datetime(string="Last Punch")
     total_time = fields.Float(string="Total Time (Hours)", compute="_compute_total_time", store=True)
@@ -51,3 +55,9 @@ class ExternalAttendanceLine(models.Model):
                 rec.absent = True
             else:
                 rec.absent = False
+
+    @api.depends('employee_id')
+    def _compute_company(self):
+        """يجلب الشركة من الموظف"""
+        for rec in self:
+            rec.company_id = rec.employee_id.x_studio_company.id if rec.employee_id and rec.employee_id.x_studio_company else False
