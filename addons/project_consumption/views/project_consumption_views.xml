@@ -4,14 +4,42 @@
         <field name="model">project.consumption</field>
         <field name="arch" type="xml">
             <form string="Project Consumption">
-                <!-- الحقول اللي بدك تعرضها -->
                 <sheet>
                     <group>
                         <field name="name"/>
                         <field name="project_id"/>
                         <field name="consumption_date"/>
-                        <field name="quantity"/>
                     </group>
+                    <notebook>
+                        <page string="Construction Materials">
+                            <field name="construction_lines">
+                                <tree editable="bottom">
+                                    <field name="item_id"/>
+                                    <field name="unit"/>
+                                    <field name="x_studio_item_serial_no"/>
+                                    <field name="type_of_material"/>
+                                    <field name="quantity_needed"/>
+                                    <field name="quantity_consumed"/>
+                                    <field name="quantity_used_over_limit"/>
+                                    <field name="balance"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="MEP Materials">
+                            <field name="mep_lines">
+                                <tree editable="bottom">
+                                    <field name="item_id"/>
+                                    <field name="unit"/>
+                                    <field name="x_studio_item_serial_no"/>
+                                    <field name="type_of_material"/>
+                                    <field name="quantity_needed"/>
+                                    <field name="quantity_consumed"/>
+                                    <field name="quantity_used_over_limit"/>
+                                    <field name="balance"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
             </form>
         </field>
@@ -20,6 +48,9 @@
     <record id="action_project_consumption" model="ir.actions.act_window">
         <field name="name">Project Consumption</field>
         <field name="res_model">project.consumption</field>
-        <field name="view_mode">form</field>
+        <field name="view_mode">form,tree</field>
     </record>
+
+    <menuitem id="menu_project_consumption_root" name="Project Consumption" sequence="10"/>
+    <menuitem id="menu_project_consumption" name="Consumptions" parent="menu_project_consumption_root" action="action_project_consumption"/>
 </odoo>

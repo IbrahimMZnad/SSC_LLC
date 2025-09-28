@@ -4,9 +4,11 @@ class ProjectConsumption(models.Model):
     _name = 'project.consumption'
     _description = 'Project Consumption'
 
+    name = fields.Char(string="Reference", required=True)
     project_id = fields.Many2one('x_projects_list', string='Project', required=True)
+    consumption_date = fields.Date(string="Date")
 
-    # Lines By Project
+    # Lines
     construction_lines = fields.One2many('project.consumption.line', 'project_consumption_id', string='Construction Materials')
     mep_lines = fields.One2many('project.consumption.line', 'project_consumption_id', string='MEP Materials')
 
@@ -18,7 +20,7 @@ class ProjectConsumptionLine(models.Model):
     project_consumption_id = fields.Many2one('project.consumption', string='Project Consumption', required=True)
     item_id = fields.Many2one('x_all_items_list', string='Material', required=True)
     
-    # Fields linked to x_all_items_list
+    # Related fields
     unit = fields.Char(string='Unit', related='item_id.x_studio_unit', readonly=True)
     x_studio_item_serial_no = fields.Char(string='Item Serial No', related='item_id.x_studio_item_serial_no', readonly=True)
     type_of_material = fields.Many2one('x_all_items_list', string='Type Of Material', related='item_id.x_studio_type_of_material', readonly=True)
@@ -27,7 +29,7 @@ class ProjectConsumptionLine(models.Model):
     quantity_needed = fields.Float(string='Quantity Needed')
     quantity_consumed = fields.Float(string='Quantity Consumed')
     
-    # Calculated fields
+    # Computed
     quantity_used_over_limit = fields.Float(string='Quantity Used Over Limit', compute='_compute_over_limit', store=True)
     balance = fields.Float(string='Balance', compute='_compute_balance', store=True)
 
