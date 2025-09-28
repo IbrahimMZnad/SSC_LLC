@@ -6,10 +6,9 @@
             <form string="Project Consumption">
                 <sheet>
                     <group>
-                        <field name="name"/>
                         <field name="project_id"/>
-                        <field name="consumption_date"/>
                     </group>
+
                     <notebook>
                         <page string="Construction Materials">
                             <field name="construction_lines">
@@ -25,6 +24,7 @@
                                 </tree>
                             </field>
                         </page>
+
                         <page string="MEP Materials">
                             <field name="mep_lines">
                                 <tree editable="bottom">
@@ -51,6 +51,8 @@
         <field name="view_mode">form,tree</field>
     </record>
 
-    <menuitem id="menu_project_consumption_root" name="Project Consumption" sequence="10"/>
-    <menuitem id="menu_project_consumption" name="Consumptions" parent="menu_project_consumption_root" action="action_project_consumption"/>
+    <menuitem id="menu_project_consumption_root" name="Project Consumption"/>
+    <menuitem id="menu_project_consumption" name="Consumptions"
+              parent="menu_project_consumption_root"
+              action="action_project_consumption"/>
 </odoo>
