@@ -48,7 +48,7 @@ class ExternalAttendance(models.Model):
         for emp in employees:
             lines.append((0, 0, {
                 'employee_id': emp.id,
-                'attendance_id': emp.x_studio_attendance_id or '',  # Copy Char field
+                'attendance_id': emp.x_studio_attendance_id or '',
                 'company_id': emp.x_studio_company.id if getattr(emp, 'x_studio_company', False) else False,
             }))
         if lines:
@@ -62,7 +62,7 @@ class ExternalAttendanceLine(models.Model):
     external_id = fields.Many2one('ssc.external.attendance', string="Attendance Reference", ondelete='cascade')
     employee_id = fields.Many2one('x_employeeslist', string="Employee", required=True)
     company_id = fields.Many2one('res.company', string="Company", compute="_compute_company", store=True)
-    attendance_id = fields.Char(string="Attendance ID")  # from employee.x_studio_attendance_id
+    attendance_id = fields.Char(string="Attendance ID")
 
     first_punch = fields.Datetime(string="First Punch")
     last_punch = fields.Datetime(string="Last Punch")
