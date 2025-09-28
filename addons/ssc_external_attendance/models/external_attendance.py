@@ -88,14 +88,20 @@ class ExternalAttendanceLine(models.Model):
         for rec in self:
             if rec.first_punch and rec.last_punch:
                 delta = rec.last_punch - rec.first_punch
-                rec.total_time = delta.total_seconds() / 3600.0
+                hours = delta.total_seconds() / 3600.0
+                rec.total_time = hours if hours <= 8 else 8.0
             else:
                 rec.total_time = 0.0
 
-    @api.depends('total_time')
+    @api.depends('first_punch', 'last_punch')
     def _compute_total_ot(self):
         for rec in self:
-            rec.total_ot = rec.total_time - 8.0 if rec.total_time > 8.0 else 0.0
+            if rec.first_punch and rec.last_punch:
+                delta = rec.last_punch - rec.first_punch
+                hours = delta.total_seconds() / 3600.0
+                rec.total_ot = hours - 8.0 if hours > 8.0 else 0.0
+            else:
+                rec.total_ot = 0.0
 
     @api.depends('first_punch')
     def _compute_absent(self):
