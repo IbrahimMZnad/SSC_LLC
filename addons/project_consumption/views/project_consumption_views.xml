@@ -1,76 +1,25 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
-    <!-- Tree View للموديول -->
-    <record id="view_project_consumption_tree" model="ir.ui.view">
-        <field name="name">project.consumption.tree</field>
-        <field name="model">project.consumption</field>
-        <field name="arch" type="xml">
-            <tree>
-                <field name="project_id"/>
-                <field name="construction_lines" widget="one2many_list"/>
-                <field name="mep_lines" widget="one2many_list"/>
-            </tree>
-        </field>
-    </record>
-
-    <!-- Form View للموديول -->
     <record id="view_project_consumption_form" model="ir.ui.view">
         <field name="name">project.consumption.form</field>
         <field name="model">project.consumption</field>
         <field name="arch" type="xml">
             <form string="Project Consumption">
+                <!-- الحقول اللي بدك تعرضها -->
                 <sheet>
                     <group>
+                        <field name="name"/>
                         <field name="project_id"/>
+                        <field name="consumption_date"/>
+                        <field name="quantity"/>
                     </group>
-
-                    <notebook>
-                        <!-- Construction Materials Tab -->
-                        <page string="Construction Materials">
-                            <field name="construction_lines">
-                                <tree editable="bottom">
-                                    <field name="item_id"/>
-                                    <field name="unit"/>
-                                    <field name="x_studio_item_serial_no"/>
-                                    <field name="type_of_material"/>
-                                    <field name="quantity_needed"/>
-                                    <field name="quantity_consumed"/>
-                                    <field name="quantity_used_over_limit"/>
-                                    <field name="balance"/>
-                                </tree>
-                            </field>
-                        </page>
-
-                        <!-- MEP Materials Tab -->
-                        <page string="MEP Materials">
-                            <field name="mep_lines">
-                                <tree editable="bottom">
-                                    <field name="item_id"/>
-                                    <field name="unit"/>
-                                    <field name="x_studio_item_serial_no"/>
-                                    <field name="type_of_material"/>
-                                    <field name="quantity_needed"/>
-                                    <field name="quantity_consumed"/>
-                                    <field name="quantity_used_over_limit"/>
-                                    <field name="balance"/>
-                                </tree>
-                            </field>
-                        </page>
-                    </notebook>
                 </sheet>
             </form>
         </field>
     </record>
 
-    <!-- Action -->
     <record id="action_project_consumption" model="ir.actions.act_window">
         <field name="name">Project Consumption</field>
         <field name="res_model">project.consumption</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">form</field>
     </record>
-
-    <!-- Menu -->
-    <menuitem id="menu_project_consumption_root" name="Project Consumption" sequence="10"/>
-    <menuitem id="menu_project_consumption_main" name="Consumptions" parent="menu_project_consumption_root"
-              action="action_project_consumption"/>
 </odoo>
