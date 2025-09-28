@@ -19,7 +19,6 @@ class ExternalAttendance(models.Model):
 
     @api.model
     def create_daily_attendance(self):
-        """Scheduled by cron: create one attendance record per day."""
         today = fields.Date.context_today(self)
         existing = self.search([('date', '=', today)], limit=1)
         if existing:
@@ -40,7 +39,6 @@ class ExternalAttendance(models.Model):
         return record
 
     def _populate_lines(self):
-        """Populate lines with all employees except Engineer Office Staff."""
         self.ensure_one()
         Employee = self.env['x_employeeslist']
         employees = Employee.search([('x_studio_engineeroffice_staff', '!=', True)])
@@ -48,7 +46,7 @@ class ExternalAttendance(models.Model):
         for emp in employees:
             lines.append((0, 0, {
                 'employee_id': emp.id,
-                'attendance_id': emp.x_studio_attendance_id or '',  # Copy Char field
+                'attendance_id': emp.x_studio_attendance_id or '',
                 'company_id': emp.x_studio_company.id if getattr(emp, 'x_studio_company', False) else False,
             }))
         if lines:
@@ -62,21 +60,13 @@ class ExternalAttendanceLine(models.Model):
     external_id = fields.Many2one('ssc.external.attendance', string="Attendance Reference", ondelete='cascade')
     employee_id = fields.Many2one('x_employeeslist', string="Employee", required=True)
     company_id = fields.Many2one('res.company', string="Company", compute="_compute_company", store=True)
-    attendance_id = fields.Char(string="Attendance ID")  # from employee.x_studio_attendance_id
+    attendance_id = fields.Char(string="Attendance ID")
 
     first_punch = fields.Datetime(string="First Punch")
     last_punch = fields.Datetime(string="Last Punch")
     total_time = fields.Float(string="Total Time (Hours)", compute="_compute_total_time", store=True)
     total_ot = fields.Float(string="Total OT (Hours)", compute="_compute_total_ot", store=True)
     absent = fields.Boolean(string="Absent", compute="_compute_absent", store=True)
-
-    @api.constrains('employee_id')
-    def _check_employee_company(self):
-        for rec in self:
-            if rec.employee_id and not getattr(rec.employee_id, 'x_studio_company', False):
-                raise exceptions.ValidationError(
-                    "Employee %s has no company assigned (x_studio_company)." % (rec.employee_id.display_name,)
-                )
 
     @api.depends('employee_id')
     def _compute_company(self):
