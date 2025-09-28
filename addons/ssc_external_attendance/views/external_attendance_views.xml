@@ -1,5 +1,4 @@
 <odoo>
-    <!-- Form view for External Attendance -->
     <record id="view_form_external_attendance" model="ir.ui.view">
         <field name="name">ssc.external.attendance.form</field>
         <field name="model">ssc.external.attendance</field>
