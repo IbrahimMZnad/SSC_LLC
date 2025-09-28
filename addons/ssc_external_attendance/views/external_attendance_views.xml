@@ -1,4 +1,5 @@
 <odoo>
+    <!-- Form view for External Attendance -->
     <record id="view_form_external_attendance" model="ir.ui.view">
         <field name="name">ssc.external.attendance.form</field>
         <field name="model">ssc.external.attendance</field>
@@ -13,16 +14,16 @@
                     <notebook>
                         <page string="Attendance Lines">
                             <field name="line_ids">
-                                <list editable="bottom">
+                                <tree editable="bottom">
                                     <field name="employee_id"/>
-                                    <field name="company_id" readonly="1"/>
-                                    <field name="attendance_id" readonly="1"/>
+                                    <field name="company_id"/>
+                                    <field name="attendance_id"/>
                                     <field name="first_punch"/>
                                     <field name="last_punch"/>
-                                    <field name="total_time" readonly="1"/>
-                                    <field name="total_ot" readonly="1"/>
-                                    <field name="absent" readonly="1"/>
-                                </list>
+                                    <field name="total_time"/>
+                                    <field name="total_ot"/>
+                                    <field name="absent"/>
+                                </tree>
                             </field>
                         </page>
                     </notebook>
