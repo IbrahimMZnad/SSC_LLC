@@ -1,5 +1,6 @@
 from odoo import models, fields, api
-from datetime import date
+from datetime import date, timedelta
+
 
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
@@ -103,7 +104,7 @@ class SSCAttendanceLine(models.Model):
     @api.depends('first_punch')
     def _compute_absent(self):
         for rec in self:
-            if rec.external_id.date.weekday() == 4:  # Friday
+            if rec.external_id.date and rec.external_id.date.weekday() == 4:  # Friday
                 rec.absent = False
             else:
                 rec.absent = not rec.first_punch

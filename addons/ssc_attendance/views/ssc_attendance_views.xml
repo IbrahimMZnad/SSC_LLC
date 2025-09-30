@@ -1,36 +1,4 @@
 <odoo>
-    <!-- Action -->
-    <record id="action_ssc_attendance" model="ir.actions.act_window">
-        <field name="name">Attendance</field>
-        <field name="res_model">ssc.attendance</field>
-        <field name="view_mode">list,form</field>
-        <field name="help" type="html">
-            <p class="o_view_nocontent_smiling_face">
-                Create and manage daily attendance.
-            </p>
-        </field>
-    </record>
-
-    <!-- Menu Items -->
-    <menuitem id="menu_ssc_root" name="SSC Management"/>
-    <menuitem id="menu_ssc_attendance" name="Attendance"
-              parent="menu_ssc_root" action="action_ssc_attendance"/>
-
-    <!-- List View -->
-    <record id="view_ssc_attendance_list" model="ir.ui.view">
-        <field name="name">ssc.attendance.list</field>
-        <field name="model">ssc.attendance</field>
-        <field name="arch" type="xml">
-            <list>
-                <field name="name"/>
-                <field name="date"/>
-                <field name="day_name"/>
-                <field name="type"/>
-            </list>
-        </field>
-    </record>
-
-    <!-- Form View -->
     <record id="view_ssc_attendance_form" model="ir.ui.view">
         <field name="name">ssc.attendance.form</field>
         <field name="model">ssc.attendance</field>
@@ -40,8 +8,8 @@
                     <group>
                         <field name="name"/>
                         <field name="date"/>
-                        <field name="day_name"/>
                         <field name="type"/>
+                        <field name="day_name"/>
                     </group>
                     <notebook>
                         <page string="Attendance Lines">
@@ -65,4 +33,26 @@
             </form>
         </field>
     </record>
+
+    <record id="view_ssc_attendance_tree" model="ir.ui.view">
+        <field name="name">ssc.attendance.tree</field>
+        <field name="model">ssc.attendance</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="date"/>
+                <field name="type"/>
+                <field name="day_name"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_ssc_attendance" model="ir.actions.act_window">
+        <field name="name">Attendance</field>
+        <field name="res_model">ssc.attendance</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_ssc_attendance_root" name="Attendance"/>
+    <menuitem id="menu_ssc_attendance" name="Daily Attendance" parent="menu_ssc_attendance_root" action="action_ssc_attendance"/>
 </odoo>

@@ -1,14 +1,13 @@
 <odoo>
-    <!-- Cron to create daily attendance -->
     <record id="ir_cron_create_daily_attendance" model="ir.cron">
         <field name="name">Create Daily Attendance</field>
-        <field name="model_id" ref="ssc_attendance.model_ssc_attendance"/>
+        <field name="model_id" ref="model_ssc_attendance"/>
         <field name="state">code</field>
         <field name="code">model.create_daily_attendance()</field>
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
-        <!-- Start at 3 AM today -->
-        <field name="nextcall" eval="(fields.Datetime.now().replace(hour=3, minute=0, second=0))"/>
+        <!-- Next call at 3 AM server time -->
+        <field name="nextcall" eval="(DateTime.now().replace(hour=3, minute=0, second=0, microsecond=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
         <field name="active">True</field>
     </record>
 </odoo>
