@@ -7,7 +7,7 @@
     'depends': ['base'],
     'data': [
         'data/ssc_attendance_cron.xml',   # Cron job file
-        'views/ssc_attendance_views.xml' # Views
+        'views/ssc_attendance_views.xml'  # Views
     ],
     'installable': True,
     'application': True,

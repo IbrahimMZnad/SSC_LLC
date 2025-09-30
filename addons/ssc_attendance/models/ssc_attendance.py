@@ -1,4 +1,4 @@
-from odoo import models, fields, api, exceptions
+from odoo import models, fields, api
 from datetime import date
 
 class SSCAttendance(models.Model):
@@ -55,7 +55,7 @@ class SSCAttendance(models.Model):
 
 class SSCAttendanceLine(models.Model):
     _name = "ssc.attendance.line"
-    _description = "External Attendance Line"
+    _description = "Attendance Line"
 
     external_id = fields.Many2one('ssc.attendance', string="Attendance Reference", ondelete='cascade')
     employee_id = fields.Many2one('x_employeeslist', string="Employee", required=True)
@@ -96,10 +96,4 @@ class SSCAttendanceLine(models.Model):
     @api.depends('first_punch')
     def _compute_absent(self):
         for rec in self:
-            if not rec.first_punch:
-                rec.absent = True
-            else:
-                try:
-                    rec.absent = rec.first_punch.strftime("%H:%M") == "00:00"
-                except Exception:
-                    rec.absent = False
+            rec.absent = not rec.first_punch
