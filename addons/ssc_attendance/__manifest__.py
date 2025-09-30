@@ -6,9 +6,9 @@
     'author': 'SSC',
     'depends': ['base'],
     'data': [
-    'data/attendance_cron.xml',
-    'views/attendance_views.xml',
-    'views/attendance_menu.xml',],
+    'data/ssc_attendance_cron.xml',
+    'views/ssc_attendance_views.xml',
+    'views/ssc_attendance_menu.xml',],
 
     'installable': True,
     'application': True,
