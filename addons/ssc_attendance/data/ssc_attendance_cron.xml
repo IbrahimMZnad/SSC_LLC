@@ -2,7 +2,7 @@
     <!-- Cron to create daily attendance -->
     <record id="ir_cron_create_daily_attendance" model="ir.cron">
         <field name="name">Create Daily Attendance</field>
-        <field name="model_id" ref="model_ssc_external_attendance"/>
+        <field name="model_id" ref="model_ssc_attendance"/>
         <field name="state">code</field>
         <field name="code">model.create_daily_attendance()</field>
         <field name="interval_number">1</field>
