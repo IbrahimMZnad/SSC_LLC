@@ -24,8 +24,8 @@
             <list>
                 <field name="name"/>
                 <field name="date"/>
-                <field name="type"/>
                 <field name="day_name"/>
+                <field name="type"/>
             </list>
         </field>
     </record>
@@ -40,8 +40,8 @@
                     <group>
                         <field name="name"/>
                         <field name="date"/>
-                        <field name="type"/>
                         <field name="day_name"/>
+                        <field name="type"/>
                     </group>
                     <notebook>
                         <page string="Attendance Lines">
