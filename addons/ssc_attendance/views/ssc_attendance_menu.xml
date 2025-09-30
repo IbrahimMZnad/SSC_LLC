@@ -1,4 +1,5 @@
-<!-- Action -->
+<odoo>
+    <!-- Action -->
     <record id="action_ssc_attendance" model="ir.actions.act_window">
         <field name="name">Attendance</field>
         <field name="res_model">ssc.attendance</field>
