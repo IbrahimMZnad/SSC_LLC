@@ -12,13 +12,9 @@
     </record>
 
     <!-- Menu Items -->
-    <menuitem id="menu_ssc_root"
-              name="SSC Management"/>
-
-    <menuitem id="menu_ssc_attendance"
-              name="Attendance"
-              parent="menu_ssc_root"
-              action="action_ssc_attendance"/>
+    <menuitem id="menu_ssc_root" name="SSC Management"/>
+    <menuitem id="menu_ssc_attendance" name="Attendance"
+              parent="menu_ssc_root" action="action_ssc_attendance"/>
 
     <!-- List View -->
     <record id="view_ssc_attendance_list" model="ir.ui.view">
@@ -64,16 +60,5 @@
                 </sheet>
             </form>
         </field>
-    </record>
-
-    <!-- Cron to create daily attendance -->
-    <record id="ir_cron_create_daily_attendance" model="ir.cron">
-        <field name="name">Create Daily Attendance</field>
-        <field name="model_id" ref="module_name.model_ssc_attendance"/>
-        <field name="state">code</field>
-        <field name="code">model.create_daily_attendance()</field>
-        <field name="interval_number">1</field>
-        <field name="interval_type">days</field>
-        <field name="active">True</field>
     </record>
 </odoo>
