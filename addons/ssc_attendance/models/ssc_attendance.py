@@ -53,7 +53,7 @@ class SSCAttendance(models.Model):
             self.write({'line_ids': lines})
 
 
-class SSC AttendanceLine(models.Model):
+class SSCAttendanceLine(models.Model):
     _name = "ssc.attendance.line"
     _description = "External Attendance Line"
 
