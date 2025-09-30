@@ -6,7 +6,8 @@
         <field name="code">model.create_daily_attendance()</field>
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
-        <field name="nextcall" eval="(datetime.datetime.today().replace(hour=3, minute=0, second=0))"/>
+        <field name="nextcall" eval="(datetime.datetime.now() + datetime.timedelta(seconds=5))"/>
+
         <field name="active">True</field>
     </record>
 </odoo>
