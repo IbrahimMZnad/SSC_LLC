@@ -13,22 +13,15 @@ class SSCAttendance(models.Model):
     type = fields.Selection(
         [('Regular Day', 'Regular Day'), ('Off Day', 'Off Day')],
         string="Type",
-        compute="_compute_type", store=True
+        default=lambda self: 'Off Day' if date.today().weekday() == 4 else 'Regular Day'
     )
     day_name = fields.Char(string="Day Name", compute="_compute_day_name", store=True)
     line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
 
     @api.depends('date')
-    def _compute_type(self):
-        for rec in self:
-            if rec.date:
-                rec.type = 'Off Day' if rec.date.weekday() == 4 else 'Regular Day'
-
-    @api.depends('date')
     def _compute_day_name(self):
         for rec in self:
-            if rec.date:
-                rec.day_name = rec.date.strftime("%A")
+            rec.day_name = rec.date.strftime('%A') if rec.date else ''
 
     @api.model
     def create_daily_attendance(self):
@@ -38,7 +31,8 @@ class SSCAttendance(models.Model):
             return existing
         vals = {
             'name': str(today),
-            'date': today
+            'date': today,
+            'type': 'Off Day' if today.weekday() == 4 else 'Regular Day'
         }
         record = self.create(vals)
         return record
@@ -75,7 +69,6 @@ class SSCAttendanceLine(models.Model):
     attendance_id = fields.Char(string="Attendance ID")
     project_id = fields.Many2one('x_projects_list', string="Project")
     punch_machine_id = fields.Char(string="Punch Machine ID")
-
     first_punch = fields.Datetime(string="First Punch")
     last_punch = fields.Datetime(string="Last Punch")
     total_time = fields.Float(string="Total Time (Hours)", compute="_compute_total_time", store=True)
@@ -107,10 +100,10 @@ class SSCAttendanceLine(models.Model):
             else:
                 rec.total_ot = 0.0
 
-    @api.depends('first_punch', 'external_id.type')
+    @api.depends('first_punch')
     def _compute_absent(self):
         for rec in self:
-            if rec.external_id.type == 'Off Day':
+            if rec.external_id.date.weekday() == 4:  # Friday
                 rec.absent = False
             else:
                 rec.absent = not rec.first_punch
