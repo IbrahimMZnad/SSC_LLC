@@ -6,8 +6,8 @@
     'author': 'Ibrahim Alznad',
     'depends': ['base'],
     'data': [
-        'data/ssc_attendance_cron.xml',   # Cron job file
-        'views/ssc_attendance_views.xml'  # Views
+        'data/ssc_attendance_cron.xml',
+        'views/ssc_attendance_views.xml'
     ],
     'installable': True,
     'application': True,

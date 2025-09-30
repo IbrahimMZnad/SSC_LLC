@@ -13,9 +13,22 @@ class SSCAttendance(models.Model):
     type = fields.Selection(
         [('Regular Day', 'Regular Day'), ('Off Day', 'Off Day')],
         string="Type",
-        default=lambda self: 'Off Day' if date.today().weekday() == 4 else 'Regular Day'
+        compute="_compute_type", store=True
     )
+    day_name = fields.Char(string="Day Name", compute="_compute_day_name", store=True)
     line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
+
+    @api.depends('date')
+    def _compute_type(self):
+        for rec in self:
+            if rec.date:
+                rec.type = 'Off Day' if rec.date.weekday() == 4 else 'Regular Day'
+
+    @api.depends('date')
+    def _compute_day_name(self):
+        for rec in self:
+            if rec.date:
+                rec.day_name = rec.date.strftime("%A")
 
     @api.model
     def create_daily_attendance(self):
@@ -25,8 +38,7 @@ class SSCAttendance(models.Model):
             return existing
         vals = {
             'name': str(today),
-            'date': today,
-            'type': 'Off Day' if today.weekday() == 4 else 'Regular Day'
+            'date': today
         }
         record = self.create(vals)
         return record
@@ -61,6 +73,8 @@ class SSCAttendanceLine(models.Model):
     employee_id = fields.Many2one('x_employeeslist', string="Employee", required=True)
     company_id = fields.Many2one('res.company', string="Company", compute="_compute_company", store=True)
     attendance_id = fields.Char(string="Attendance ID")
+    project_id = fields.Many2one('x_projects_list', string="Project")
+    punch_machine_id = fields.Char(string="Punch Machine ID")
 
     first_punch = fields.Datetime(string="First Punch")
     last_punch = fields.Datetime(string="Last Punch")
@@ -93,7 +107,10 @@ class SSCAttendanceLine(models.Model):
             else:
                 rec.total_ot = 0.0
 
-    @api.depends('first_punch')
+    @api.depends('first_punch', 'external_id.type')
     def _compute_absent(self):
         for rec in self:
-            rec.absent = not rec.first_punch
+            if rec.external_id.type == 'Off Day':
+                rec.absent = False
+            else:
+                rec.absent = not rec.first_punch
