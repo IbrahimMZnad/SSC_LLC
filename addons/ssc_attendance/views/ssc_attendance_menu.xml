@@ -3,7 +3,7 @@
     <record id="action_ssc_attendance" model="ir.actions.act_window">
         <field name="name">Attendance</field>
         <field name="res_model">ssc.attendance</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- Menus -->
