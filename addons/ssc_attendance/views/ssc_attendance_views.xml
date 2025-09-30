@@ -15,7 +15,7 @@
                     <notebook>
                         <page string="Attendance Lines">
                             <field name="line_ids">
-                                <tree editable="bottom">
+                                <tree>
                                     <field name="employee_id"/>
                                     <field name="company_id"/>
                                     <field name="attendance_id"/>
