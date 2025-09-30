@@ -44,4 +44,8 @@
                 <field name="name"/>
                 <field name="date"/>
                 <field name="type"/>
-                <field name="day
+                <field name="day_name"/>
+            </list>
+        </field>
+    </record>
+</odoo>
