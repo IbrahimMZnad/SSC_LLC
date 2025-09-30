@@ -1,5 +1,4 @@
 <odoo>
-    <!-- Attendance Form -->
     <record id="view_ssc_attendance_form" model="ir.ui.view">
         <field name="name">ssc.attendance.form</field>
         <field name="model">ssc.attendance</field>
@@ -35,7 +34,6 @@
         </field>
     </record>
 
-    <!-- Attendance Tree -->
     <record id="view_ssc_attendance_tree" model="ir.ui.view">
         <field name="name">ssc.attendance.tree</field>
         <field name="model">ssc.attendance</field>
