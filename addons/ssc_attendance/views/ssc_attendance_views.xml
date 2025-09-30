@@ -1,51 +1,46 @@
-<odoo>
-    <!-- Attendance Form -->
-    <record id="view_ssc_attendance_form" model="ir.ui.view">
-        <field name="name">ssc.attendance.form</field>
-        <field name="model">ssc.attendance</field>
-        <field name="arch" type="xml">
-            <form string="Attendance">
-                <sheet>
-                    <group>
-                        <field name="name"/>
-                        <field name="date"/>
-                        <field name="type"/>
-                        <field name="day_name"/>
-                    </group>
-                    <notebook>
-                        <page string="Attendance Lines">
-                            <field name="line_ids">
-                                <list editable="bottom">
-                                    <field name="employee_id"/>
-                                    <field name="company_id"/>
-                                    <field name="attendance_id"/> <!-- بدل punch_attendance_id -->
-                                    <field name="project_id"/>
-                                    <field name="punch_machine_id"/>
-                                    <field name="first_punch"/>
-                                    <field name="last_punch"/>
-                                    <field name="total_time"/>
-                                    <field name="total_ot"/>
-                                    <field name="absent"/>
-                                </list>
-                            </field>
-                        </page>
-                    </notebook>
-                </sheet>
-            </form>
-        </field>
-    </record>
-
-    <!-- Attendance Tree -->
-    <record id="view_ssc_attendance_tree" model="ir.ui.view">
-        <field name="name">ssc.attendance.tree</field>
-        <field name="model">ssc.attendance</field>
-        <field name="arch" type="xml">
-            <list>
-                <field name="name"/>
-                <field name="date"/>
-                <field name="type"/>
-                <field name="day_name"/>
-            </list>
-        </field>
-    </record>
-</odoo>
+<record id="view_ssc_attendance_form" model="ir.ui.view">
+    <field name="name">ssc.attendance.form</field>
+    <field name="model">ssc.attendance</field>
+    <field name="arch" type="xml">
+        <form string="Attendance">
+            <sheet>
+                <group>
+                    <field name="name"/>
+                    <field name="date"/>
+                    <field name="type"/>
+                    <field name="day_name"/>
+                </group>
+                <notebook>
+                    <page string="Attendance Lines">
+                        <field name="line_ids">
+                            <tree editable="bottom"> <!-- list بدل tree -->
+                                <field name="employee_id"/>
+                                <field name="company_id"/>
+                                <field name="attendance_id"/>
+                                <field name="project_id"/>
+                                <field name="punch_machine_id"/>
+                                <field name="first_punch"/>
+                                <field name="last_punch"/>
+                                <field name="total_time"/>
+                                <field name="total_ot"/>
+                                <field name="absent"/>
+                            </tree>
+                        </field>
+                    </page>
+                </notebook>
+            </sheet>
+        </form>
+    </field>
+</record>
+<record id="view_ssc_attendance_list" model="ir.ui.view">
+    <field name="name">ssc.attendance.list</field>
+    <field name="model">ssc.attendance</field>
+    <field name="arch" type="xml">
+        <tree>
+            <field name="name"/>
+            <field name="date"/>
+            <field name="type"/>
+            <field name="day_name"/>
+        </tree>
+    </field>
+</record>
