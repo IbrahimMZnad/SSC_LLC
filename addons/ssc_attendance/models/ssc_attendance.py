@@ -52,7 +52,7 @@ class SSCAttendance(models.Model):
         for emp in employees:
             lines.append((0, 0, {
                 'employee_id': emp.id,
-                'attendance_id': emp.x_studio_attendance_id if hasattr(emp, 'x_studio_attendance_id') else False,
+                'attendance_id': emp.x_studio_attendance_id or '',
                 'company_id': emp.x_studio_company.id if getattr(emp, 'x_studio_company', False) else False,
             }))
         if lines:
