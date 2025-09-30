@@ -18,7 +18,7 @@
                                 <list editable="bottom">
                                     <field name="employee_id"/>
                                     <field name="company_id"/>
-                                    <field name="punch_attendance_id"/>
+                                    <field name="attendance_id"/> <!-- بدل punch_attendance_id -->
                                     <field name="project_id"/>
                                     <field name="punch_machine_id"/>
                                     <field name="first_punch"/>
