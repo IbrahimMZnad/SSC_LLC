@@ -1,4 +1,5 @@
 <odoo>
+    <!-- Attendance Form -->
     <record id="view_ssc_attendance_form" model="ir.ui.view">
         <field name="name">ssc.attendance.form</field>
         <field name="model">ssc.attendance</field>
@@ -17,7 +18,7 @@
                                 <list editable="bottom">
                                     <field name="employee_id"/>
                                     <field name="company_id"/>
-                                    <field name="attendance_id"/>
+                                    <field name="punch_attendance_id"/>
                                     <field name="project_id"/>
                                     <field name="punch_machine_id"/>
                                     <field name="first_punch"/>
@@ -34,6 +35,7 @@
         </field>
     </record>
 
+    <!-- Attendance Tree -->
     <record id="view_ssc_attendance_tree" model="ir.ui.view">
         <field name="name">ssc.attendance.tree</field>
         <field name="model">ssc.attendance</field>
@@ -42,17 +44,4 @@
                 <field name="name"/>
                 <field name="date"/>
                 <field name="type"/>
-                <field name="day_name"/>
-            </list>
-        </field>
-    </record>
-
-    <record id="action_ssc_attendance" model="ir.actions.act_window">
-        <field name="name">Attendance</field>
-        <field name="res_model">ssc.attendance</field>
-        <field name="view_mode">tree,form</field>
-    </record>
-
-    <menuitem id="menu_ssc_attendance_root" name="Attendance"/>
-    <menuitem id="menu_ssc_attendance" name="Daily Attendance" parent="menu_ssc_attendance_root" action="action_ssc_attendance"/>
-</odoo>
+                <field name="day
