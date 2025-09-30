@@ -1,9 +1,9 @@
 from odoo import models, fields, api, exceptions
 from datetime import date
 
-class ExternalAttendance(models.Model):
-    _name = "ssc.external.attendance"
-    _description = "External Attendance"
+class SSCAttendance(models.Model):
+    _name = "ssc.attendance"
+    _description = "SSC Attendance"
     _sql_constraints = [
         ('unique_date', 'unique(date)', 'Attendance record already exists for this date!')
     ]
@@ -15,7 +15,7 @@ class ExternalAttendance(models.Model):
         string="Type",
         default=lambda self: 'Off Day' if date.today().weekday() == 4 else 'Regular Day'
     )
-    line_ids = fields.One2many('ssc.external.attendance.line', 'external_id', string="Attendance Lines")
+    line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
 
     @api.model
     def create_daily_attendance(self):
@@ -53,11 +53,11 @@ class ExternalAttendance(models.Model):
             self.write({'line_ids': lines})
 
 
-class ExternalAttendanceLine(models.Model):
-    _name = "ssc.external.attendance.line"
+class SSC AttendanceLine(models.Model):
+    _name = "ssc.attendance.line"
     _description = "External Attendance Line"
 
-    external_id = fields.Many2one('ssc.external.attendance', string="Attendance Reference", ondelete='cascade')
+    external_id = fields.Many2one('ssc.attendance', string="Attendance Reference", ondelete='cascade')
     employee_id = fields.Many2one('x_employeeslist', string="Employee", required=True)
     company_id = fields.Many2one('res.company', string="Company", compute="_compute_company", store=True)
     attendance_id = fields.Char(string="Attendance ID")
