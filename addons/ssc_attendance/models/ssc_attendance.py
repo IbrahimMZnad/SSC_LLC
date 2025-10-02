@@ -1,5 +1,5 @@
 from odoo import models, fields, api
-from datetime import date
+from datetime import date, timedelta
 
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
@@ -26,16 +26,26 @@ class SSCAttendance(models.Model):
     @api.model
     def create_daily_attendance(self):
         today = fields.Date.context_today(self)
-        existing = self.search([('date', '=', today)], limit=1)
-        if existing:
-            return existing
-        vals = {
-            'name': str(today),
-            'date': today,
-            'type': 'Off Day' if today.weekday() == 4 else 'Regular Day'
-        }
-        record = self.create(vals)
-        return record
+
+        # البحث عن آخر سجل حضور موجود
+        last_record = self.search([], order="date desc", limit=1)
+
+        start_date = last_record.date if last_record else today
+        if not start_date:
+            start_date = today
+
+        # إذا آخر تاريخ أقل من اليوم → نكمل لبين ما نوصل اليوم
+        current_date = start_date
+        while current_date <= today:
+            existing = self.search([('date', '=', current_date)], limit=1)
+            if not existing:
+                vals = {
+                    'name': str(current_date),
+                    'date': current_date,
+                    'type': 'Off Day' if current_date.weekday() == 4 else 'Regular Day'
+                }
+                self.create(vals)
+            current_date += timedelta(days=1)  # زيادة يوم
 
     @api.model
     def create(self, vals):
@@ -57,6 +67,7 @@ class SSCAttendance(models.Model):
             }))
         if lines:
             self.write({'line_ids': lines})
+
 
 class SSCAttendanceLine(models.Model):
     _name = "ssc.attendance.line"

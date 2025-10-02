@@ -6,7 +6,8 @@
         <field name="code">model.create_daily_attendance()</field>
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
-        <field name="nextcall" eval="(DateTime.now().replace(hour=23, minute=0, second=0, microsecond=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
+        <!-- تشغيل الكرون يومياً الساعة 3:00 صباحاً -->
+        <field name="nextcall" eval="(DateTime.now().replace(hour=3, minute=0, second=0, microsecond=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
         <field name="active">True</field>
     </record>
 </odoo>
