@@ -57,13 +57,15 @@ class SSCAttendance(models.Model):
     def _populate_lines(self):
         self.ensure_one()
         Employee = self.env['x_employeeslist']
-        employees = Employee.search([('x_studio_engineeroffice_staff', '!=', True)])
+        employees = Employee.search([])  # جلب جميع الموظفين
         lines = []
         for emp in employees:
             lines.append((0, 0, {
                 'employee_id': emp.id,
                 'attendance_id': emp.x_studio_attendance_id or '',
                 'company_id': emp.x_studio_company.id if getattr(emp, 'x_studio_company', False) else False,
+                'staff': emp.x_studio_engineeroffice_staff,
+                'on_leave': emp.x_studio_on_leave,
             }))
         if lines:
             self.write({'line_ids': lines})
@@ -84,6 +86,8 @@ class SSCAttendanceLine(models.Model):
     total_time = fields.Float(string="Total Time (Hours)", compute="_compute_total_time", store=True)
     total_ot = fields.Float(string="Total OT (Hours)", compute="_compute_total_ot", store=True)
     absent = fields.Boolean(string="Absent", compute="_compute_absent", store=True)
+    staff = fields.Boolean(string="Staff", compute="_compute_staff", store=True)
+    on_leave = fields.Boolean(string="On Leave", compute="_compute_on_leave", store=True)
 
     @api.depends('employee_id')
     def _compute_company(self):
@@ -117,3 +121,13 @@ class SSCAttendanceLine(models.Model):
                 rec.absent = False
             else:
                 rec.absent = not rec.first_punch
+
+    @api.depends('employee_id')
+    def _compute_staff(self):
+        for rec in self:
+            rec.staff = rec.employee_id.x_studio_engineeroffice_staff if rec.employee_id else False
+
+    @api.depends('employee_id')
+    def _compute_on_leave(self):
+        for rec in self:
+            rec.on_leave = rec.employee_id.x_studio_on_leave if rec.employee_id else False

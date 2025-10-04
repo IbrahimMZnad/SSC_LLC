@@ -26,6 +26,8 @@
                                     <field name="total_time"/>
                                     <field name="total_ot"/>
                                     <field name="absent"/>
+                                    <field name="staff"/>
+                                    <field name="on_leave"/>
                                 </list>
                             </field>
                         </page>
