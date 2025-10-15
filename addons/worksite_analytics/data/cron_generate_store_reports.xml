@@ -1,0 +1,31 @@
+<odoo>
+    <record id="ir_cron_generate_store_reports" model="ir.cron">
+        <field name="name">Generate Store Reports</field>
+        <field name="model_id" ref="model_store_report"/>
+        <field name="state">code</field>
+        <field name="code">
+            stores = env['x_inventory_stores_pro'].search([])
+            for store in stores:
+                # إنشاء تقرير شهري جديد لكل store إذا لم يكن موجود
+                month = str(fields.Date.today().month)
+                year = fields.Date.today().year
+                existing = env['store.report'].search([
+                    ('name', '=', store.name),
+                    ('month', '=', month),
+                    ('year', '=', year)
+                ])
+                if not existing:
+                    report = env['store.report'].create({
+                        'name': store.name,
+                        'month': month,
+                        'year': year
+                    })
+                    report.generate_consumed_lines()
+                    report.generate_transferring_lines()
+        </field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="active">True</field>
+    </record>
+</odoo>
