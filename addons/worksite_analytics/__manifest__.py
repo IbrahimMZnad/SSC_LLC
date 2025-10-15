@@ -7,7 +7,7 @@
         showing Materials Consumed data from x_transaction.
     """,
     "author": "Ibrahim Elzenad",
-    "depends": ["base", "x_inventory_stores_pro"],
+    "depends": ["base"],
     "data": [
         "views/store_report_views.xml",
         "reports/store_report_templates.xml",
