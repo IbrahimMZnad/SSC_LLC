@@ -1,0 +1,48 @@
+<odoo>
+    <data>
+        <template id="store_consumed_report_template">
+            <t t-name="store_consumed_report.template">
+                <t t-foreach="docs" t-as="store">
+                    <h2>
+                        <t t-esc="store.name"/>
+                    </h2>
+                    <table class="table table-sm table-bordered mt32">
+                        <thead>
+                            <tr style="background-color:#f0f0f0;">
+                                <th>Date</th>
+                                <th>Item</th>
+                                <th>Quantity</th>
+                                <th>Unit</th>
+                                <th>Sector</th>
+                                <th>Remarks</th>
+                                <th>Type Of Material</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="store.transactions_ids.filtered(lambda t: t.x_studio_type_of_transaction == 'Consumed')" t-as="line">
+                                <tr>
+                                    <td><t t-esc="line.x_studio_date_2"/></td>
+                                    <td><t t-esc="line.x_studio_item_1"/></td>
+                                    <td><t t-esc="line.x_studio_quantity"/></td>
+                                    <td><t t-esc="line.x_studio_unit_1"/></td>
+                                    <td><t t-esc="line.x_studio_sector"/></td>
+                                    <td><t t-esc="line.x_studio_remarks_4"/></td>
+                                    <td><t t-esc="line.x_studio_type_of_material"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </t>
+            </t>
+        </template>
+
+        <report
+            id="action_store_consumed_report"
+            model="x_inventory_stores_pro"
+            string="Store Consumed Report"
+            report_type="qweb-pdf"
+            name="store_consumed_report.template"
+            file="store_consumed_report.template"
+        />
+    </data>
+</odoo>
