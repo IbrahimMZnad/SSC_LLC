@@ -1,0 +1,40 @@
+<odoo>
+    <record id="view_store_report_form" model="ir.ui.view">
+        <field name="name">store.report.form</field>
+        <field name="model">store.report</field>
+        <field name="arch" type="xml">
+            <form string="Store Report">
+                <header>
+                    <field name="name"/>
+                    <field name="year"/>
+                    <field name="month"/>
+                </header>
+                <sheet>
+                    <notebook>
+                        <page string="Materials Consumed" attrs="{'invisible':[('consumed_lines','=',False)]}">
+                            <field name="consumed_lines">
+                                <tree string="Materials Consumed">
+                                    <field name="date"/>
+                                    <field name="item"/>
+                                    <field name="quantity"/>
+                                    <field name="unit"/>
+                                    <field name="sector"/>
+                                    <field name="remarks"/>
+                                    <field name="type_of_material"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_store_report" model="ir.actions.act_window">
+        <field name="name">Store Reports</field>
+        <field name="res_model">store.report</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_store_reports" name="Store Reports" parent="base.menu_custom" action="action_store_report"/>
+</odoo>
