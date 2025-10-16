@@ -13,7 +13,7 @@
                     <notebook>
                         <page string="Monthly Report">
                             <field name="report_lines">
-                                <tree editable="bottom">
+                                <list>
                                     <field name="month_year"/>
                                     <field name="item"/>
                                     <field name="quantity"/>
@@ -23,7 +23,7 @@
                                     <field name="day"/>
                                     <field name="sector"/>
                                     <field name="transaction_id"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>
@@ -37,10 +37,10 @@
         <field name="name">store.monthly.report.tree</field>
         <field name="model">store.monthly.report</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name"/>
                 <field name="project"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -48,7 +48,7 @@
     <record id="action_store_monthly_report" model="ir.actions.act_window">
         <field name="name">Store Monthly Reports</field>
         <field name="res_model">store.monthly.report</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- Menu -->
