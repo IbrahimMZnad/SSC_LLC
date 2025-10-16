@@ -1,0 +1,57 @@
+<odoo>
+    <!-- Form View -->
+    <record id="view_store_monthly_report_form" model="ir.ui.view">
+        <field name="name">store.monthly.report.form</field>
+        <field name="model">store.monthly.report</field>
+        <field name="arch" type="xml">
+            <form string="Store Monthly Report">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="project"/>
+                    </group>
+                    <notebook>
+                        <page string="Monthly Report">
+                            <field name="report_lines">
+                                <tree editable="bottom">
+                                    <field name="month_year"/>
+                                    <field name="item"/>
+                                    <field name="quantity"/>
+                                    <field name="unit"/>
+                                    <field name="type_of_material"/>
+                                    <field name="date"/>
+                                    <field name="day"/>
+                                    <field name="sector"/>
+                                    <field name="transaction_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="view_store_monthly_report_tree" model="ir.ui.view">
+        <field name="name">store.monthly.report.tree</field>
+        <field name="model">store.monthly.report</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="project"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_store_monthly_report" model="ir.actions.act_window">
+        <field name="name">Store Monthly Reports</field>
+        <field name="res_model">store.monthly.report</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_store_report_root" name="Store Reports" sequence="10"/>
+    <menuitem id="menu_store_report" name="Monthly Reports" parent="menu_store_report_root" action="action_store_monthly_report"/>
+</odoo>
