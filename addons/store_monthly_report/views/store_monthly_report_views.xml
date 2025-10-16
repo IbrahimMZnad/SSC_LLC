@@ -32,7 +32,6 @@
         </field>
     </record>
 
-    <!-- Tree View -->
     <record id="view_store_monthly_report_tree" model="ir.ui.view">
         <field name="name">store.monthly.report.tree</field>
         <field name="model">store.monthly.report</field>
@@ -44,14 +43,12 @@
         </field>
     </record>
 
-    <!-- Action -->
     <record id="action_store_monthly_report" model="ir.actions.act_window">
         <field name="name">Store Monthly Reports</field>
         <field name="res_model">store.monthly.report</field>
         <field name="view_mode">list,form</field>
     </record>
 
-    <!-- Menu -->
     <menuitem id="menu_store_report_root" name="Store Reports" sequence="10"/>
     <menuitem id="menu_store_report" name="Monthly Reports" parent="menu_store_report_root" action="action_store_monthly_report"/>
 </odoo>
