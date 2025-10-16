@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Cron: Import x_transaction into store reports -->
+    <record id="ir_cron_import_transactions" model="ir.cron">
+        <field name="name">Import x_transaction into Store Reports</field>
+        <field name="model_id" ref="base.model_ir_cron"/>
+        <field name="state">code</field>
+        <field name="code">model.env['store.report.cron'].cron_import_transactions_into_reports()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="numbercall">-1</field>
+        <field name="active">True</field>
+    </record>
+</odoo>
