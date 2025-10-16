@@ -1,5 +1,4 @@
 <odoo>
-    <!-- Cron: إنشاء تقارير لكل الاستورات -->
     <record id="ir_cron_create_store_reports" model="ir.cron">
         <field name="name">Create Store Monthly Reports</field>
         <field name="model_id" ref="model_store_monthly_report"/>
@@ -11,7 +10,6 @@
         <field name="active" eval="True"/>
     </record>
 
-    <!-- Cron: تعبئة خطوط التقرير من x_transaction -->
     <record id="ir_cron_fill_report_lines" model="ir.cron">
         <field name="name">Fill Store Monthly Report Lines</field>
         <field name="model_id" ref="model_store_monthly_report"/>
