@@ -14,8 +14,8 @@
                     </group>
                     <notebook>
                         <page string="Attendance Lines">
-                            <field name="line_ids" context="{'default_attendance_id': active_id}" >
-                                <tree editable="bottom">
+                            <field name="line_ids">
+                                <list editable="bottom">
                                     <field name="employee_id"/>
                                     <field name="company_id"/>
                                     <field name="attendance_id"/>
@@ -28,7 +28,7 @@
                                     <field name="absent"/>
                                     <field name="staff"/>
                                     <field name="on_leave"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>
