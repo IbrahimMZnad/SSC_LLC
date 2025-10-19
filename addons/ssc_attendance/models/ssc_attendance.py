@@ -1,5 +1,9 @@
 from odoo import models, fields, api
 from datetime import date, timedelta
+import requests
+import logging
+
+_logger = logging.getLogger(__name__)
 
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
@@ -28,12 +32,10 @@ class SSCAttendance(models.Model):
         today = fields.Date.context_today(self)
 
         last_record = self.search([], order="date desc", limit=1)
-
         start_date = last_record.date if last_record else today
         if not start_date:
             start_date = today
 
-       
         current_date = start_date
         while current_date <= today:
             existing = self.search([('date', '=', current_date)], limit=1)
@@ -44,7 +46,7 @@ class SSCAttendance(models.Model):
                     'type': 'Off Day' if current_date.weekday() == 4 else 'Regular Day'
                 }
                 self.create(vals)
-            current_date += timedelta(days=1)  # زيادة يوم
+            current_date += timedelta(days=1)
 
     @api.model
     def create(self, vals):
@@ -56,7 +58,7 @@ class SSCAttendance(models.Model):
     def _populate_lines(self):
         self.ensure_one()
         Employee = self.env['x_employeeslist']
-        employees = Employee.search([])  # جلب جميع الموظفين
+        employees = Employee.search([])
         lines = []
         for emp in employees:
             lines.append((0, 0, {
@@ -68,6 +70,78 @@ class SSCAttendance(models.Model):
             }))
         if lines:
             self.write({'line_ids': lines})
+
+    # =============================================================
+    # ✅ Fetch Attendance Data from BioCloud API with Date Comparison
+    # =============================================================
+    def fetch_bioclock_data(self):
+        """Fetch and update attendance data from ZK BioCloud with date comparison"""
+        api_url = "https://api.zkbiocloud.com/v1/attendance"
+        headers = {
+            "Authorization": "Token fa83e149dabc49d28c477ea557016d03",
+            "Content-Type": "application/json"
+        }
+
+        try:
+            response = requests.get(api_url, headers=headers)
+            if response.status_code == 200:
+                data = response.json()
+                _logger.info(f"✅ Successfully fetched {len(data)} records from BioCloud.")
+
+                for item in data:
+                    emp_code = item.get('employee_id')
+                    punch_time_str = item.get('punch_time')
+                    device_id = item.get('device_id')
+                    status = item.get('status')
+
+                    if not punch_time_str:
+                        continue
+
+                    # 🕒 Convert punch_time to date for comparison
+                    punch_date = fields.Date.to_date(punch_time_str.split('T')[0])
+
+                    # 🔍 Find or create attendance record for that date
+                    today_rec = self.search([('date', '=', punch_date)], limit=1)
+                    if not today_rec:
+                        today_rec = self.create({
+                            'date': punch_date,
+                            'name': str(punch_date),
+                            'type': 'Off Day' if punch_date.weekday() == 4 else 'Regular Day'
+                        })
+
+                    # 🧍 Match employee by BioCloud employee_id
+                    employee = self.env['x_employeeslist'].search([
+                        ('x_studio_attendance_id', '=', emp_code)
+                    ], limit=1)
+
+                    if employee:
+                        line = self.env['ssc.attendance.line'].search([
+                            ('employee_id', '=', employee.id),
+                            ('external_id', '=', today_rec.id)
+                        ], limit=1)
+
+                        # ✅ Update or create attendance line
+                        if line:
+                            if status.lower() == "checkin":
+                                line.first_punch = punch_time_str
+                            elif status.lower() == "checkout":
+                                line.last_punch = punch_time_str
+                            line.punch_machine_id = device_id
+                        else:
+                            self.env['ssc.attendance.line'].create({
+                                'external_id': today_rec.id,
+                                'employee_id': employee.id,
+                                'attendance_id': emp_code,
+                                'punch_machine_id': device_id,
+                                'first_punch': punch_time_str if status.lower() == "checkin" else False,
+                                'last_punch': punch_time_str if status.lower() == "checkout" else False,
+                            })
+
+                _logger.info("✅ BioCloud Sync Completed Successfully.")
+            else:
+                _logger.warning(f"⚠️ BioCloud API returned {response.status_code}: {response.text}")
+        except Exception as e:
+            _logger.error(f"❌ Error fetching BioCloud data: {e}")
 
 
 class SSCAttendanceLine(models.Model):
