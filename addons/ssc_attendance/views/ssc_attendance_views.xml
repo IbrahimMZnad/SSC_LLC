@@ -1,5 +1,4 @@
 <odoo>
-    <!-- Attendance Form -->
     <record id="view_ssc_attendance_form" model="ir.ui.view">
         <field name="name">ssc.attendance.form</field>
         <field name="model">ssc.attendance</field>
@@ -12,10 +11,20 @@
                         <field name="type"/>
                         <field name="day_name"/>
                     </group>
+
+                    <!-- 🔹 زر مزامنة بيانات BioCloud -->
+                    <header>
+                        <button name="fetch_bioclock_data"
+                                string="🔄 Sync BioCloud Data"
+                                type="object"
+                                class="btn-primary"
+                                icon="fa-refresh"/>
+                    </header>
+
                     <notebook>
                         <page string="Attendance Lines">
                             <field name="line_ids">
-                                <list>
+                                <tree>
                                     <field name="employee_id"/>
                                     <field name="company_id"/>
                                     <field name="attendance_id"/>
@@ -28,7 +37,7 @@
                                     <field name="absent"/>
                                     <field name="staff"/>
                                     <field name="on_leave"/>
-                                </list>
+                                </tree>
                             </field>
                         </page>
                     </notebook>
