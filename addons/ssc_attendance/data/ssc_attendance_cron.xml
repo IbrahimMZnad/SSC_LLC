@@ -1,5 +1,4 @@
 <odoo>
-    <!-- Create Daily Attendance -->
     <record id="ir_cron_create_daily_attendance" model="ir.cron">
         <field name="name">Create Daily Attendance</field>
         <field name="model_id" ref="model_ssc_attendance"/>
@@ -7,19 +6,8 @@
         <field name="code">model.create_daily_attendance()</field>
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
+        <!-- تشغيل الكرون يومياً الساعة 3:00 صباحاً -->
         <field name="nextcall" eval="(DateTime.now().replace(hour=3, minute=0, second=0, microsecond=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
-        <field name="active">True</field>
-    </record>
-
-    <!-- 🔄 Fetch BioCloud Attendance Data Automatically -->
-    <record id="ir_cron_fetch_bioclock_data" model="ir.cron">
-        <field name="name">Fetch BioCloud Attendance Data</field>
-        <field name="model_id" ref="model_ssc_attendance"/>
-        <field name="state">code</field>
-        <field name="code">model.fetch_bioclock_data()</field>
-        <field name="interval_number">1</field>
-        <field name="interval_type">hours</field>
-        <field name="nextcall" eval="(DateTime.now().replace(hour=4, minute=0, second=0, microsecond=0)).strftime('%Y-%m-%d %H:%M:%S')"/>
         <field name="active">True</field>
     </record>
 </odoo>
