@@ -1,9 +1,11 @@
 from odoo import models, fields, api
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
+import requests
 
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
     _description = "SSC Attendance"
+
     _sql_constraints = [
         ('unique_date', 'unique(date)', 'Attendance record already exists for this date!')
     ]
@@ -28,6 +30,8 @@ class SSCAttendance(models.Model):
         today = fields.Date.context_today(self)
         last_record = self.search([], order="date desc", limit=1)
         start_date = last_record.date if last_record else today
+        if not start_date:
+            start_date = today
 
         current_date = start_date
         while current_date <= today:
@@ -63,6 +67,55 @@ class SSCAttendance(models.Model):
             }))
         if lines:
             self.write({'line_ids': lines})
+
+    # 🔄 زر أو كرون لجلب البيانات من BioCloud
+    def fetch_bioclock_data(self):
+        """Fetch attendance data from BioCloud API"""
+        url = "https://57.biocloud.me:8199"  
+        token = "fa83e149dabc49d28c477ea557016d03"  
+        headers = {"Authorization": f"Token {token}"}
+
+        try:
+            response = requests.get(url, headers=headers, timeout=30)
+            if response.status_code != 200:
+                raise Exception(f"Error fetching data: {response.status_code}")
+
+            data = response.json()
+            for entry in data.get('data', []):
+                entry_date = datetime.strptime(entry.get('date'), '%Y-%m-%d').date()
+                existing = self.search([('date', '=', entry_date)], limit=1)
+                if existing:
+                    continue  # موجودة بالفعل
+
+                vals = {
+                    'name': str(entry_date),
+                    'date': entry_date,
+                    'type': 'Regular Day',
+                }
+                self.create(vals)
+
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'BioCloud Sync',
+                    'message': 'Attendance data synced successfully!',
+                    'type': 'success',
+                    'sticky': False,
+                }
+            }
+
+        except Exception as e:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Sync Error',
+                    'message': str(e),
+                    'type': 'danger',
+                    'sticky': True,
+                }
+            }
 
 
 class SSCAttendanceLine(models.Model):
