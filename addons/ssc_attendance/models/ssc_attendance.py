@@ -71,8 +71,8 @@ class SSCAttendance(models.Model):
     # 🔄 زر أو كرون لجلب البيانات من BioCloud
     def fetch_bioclock_data(self):
         """Fetch attendance data from BioCloud API"""
-        url = "https://57.biocloud.me:8199"  
-        token = "fa83e149dabc49d28c477ea557016d03"  
+        url = "https://57.biocloud.me:8199"
+        token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"Authorization": f"Token {token}"}
 
         try:
