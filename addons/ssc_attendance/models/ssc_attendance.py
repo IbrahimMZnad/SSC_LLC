@@ -137,8 +137,13 @@ class SSCAttendance(models.Model):
                     if not attendance:
                         continue
 
-                    # البحث عن الموظف المطابق للـ BadgeNumber / Search employee by BadgeNumber
-                    employee = Employee.search([('x_studio_attendance_id', '=', badge_number)], limit=1)
+                    # البحث عن الموظف المطابق للـ BadgeNumber مع تجاهل الفاصلة / Match employee ignoring "-"
+                    emp_matched = None
+                    for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
+                        if emp.x_studio_attendance_id.replace('-', '') == badge_number:
+                            emp_matched = emp
+                            break
+                    employee = emp_matched
                     if not employee:
                         continue
 
