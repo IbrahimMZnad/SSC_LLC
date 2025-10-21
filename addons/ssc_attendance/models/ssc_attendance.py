@@ -93,13 +93,14 @@ class SSCAttendance(models.Model):
                 raise Exception(f"Error fetching data: {response.status_code} - {response.text}")
 
             data = response.json()
-            if "result" in data and data["result"] != "OK":
+            if "result" in data and data["result"] != "Success":
                 raise Exception(data.get("message", "Unexpected response"))
 
-            transactions = data.get("data", [])
+            transactions = data.get("message", [])
             Employee = self.env['x_employeeslist']
 
             for trx in transactions:
+                line = None
                 try:
                     total_records += 1
                     verify_time_str = trx.get("VerifyTime")
@@ -110,7 +111,7 @@ class SSCAttendance(models.Model):
                         errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
                         continue
 
-                    verify_dt = datetime.fromisoformat(verify_time_str)
+                    verify_dt = datetime.strptime(verify_time_str, "%Y-%m-%dT%H:%M:%S")
                     verify_date = verify_dt.date()
 
                     attendance = self.search([('date', '=', verify_date)], limit=1)
@@ -122,10 +123,10 @@ class SSCAttendance(models.Model):
                         })
                     matched_attendance += 1
 
-                    badge_clean = badge_number.replace('-', '').strip()
+                    badge_clean = badge_number.replace('-', '').strip().upper()
                     employee = None
                     for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
-                        emp_badge = emp.x_studio_attendance_id.replace('-', '').strip()
+                        emp_badge = emp.x_studio_attendance_id.replace('-', '').strip().upper()
                         if emp_badge == badge_clean:
                             employee = emp
                             break
@@ -149,8 +150,7 @@ class SSCAttendance(models.Model):
                     else:
                         line = line[0]
 
-                    if not line.first_punch:
-                        line.first_punch = verify_dt
+                    line.first_punch = verify_dt
                     line.last_punch = verify_dt
                     line.punch_machine_id = device_serial
 
@@ -158,18 +158,9 @@ class SSCAttendance(models.Model):
 
                 except Exception as sub_e:
                     errors.append(f"Error processing record {trx.get('BadgeNumber')}: {sub_e}")
-                    # حفظ الخطأ على السطر إذا كان موجود
                     if line:
                         line.error_note = str(sub_e)
                     continue
-
-            # حفظ جميع الأخطاء على مستوى Attendance Line إن وجد
-            if errors:
-                for err in errors:
-                    self.env['ssc.attendance.line'].create({
-                        'external_id': attendance.id,
-                        'error_note': err
-                    })
 
             return {
                 'type': 'ir.actions.client',
