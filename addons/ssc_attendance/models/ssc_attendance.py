@@ -1,6 +1,7 @@
 from odoo import models, fields, api
 from datetime import date, timedelta, datetime
 import requests
+import re
 
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
@@ -24,7 +25,7 @@ class SSCAttendance(models.Model):
     line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
 
     # -------------------------
-    # Compute day name
+    # دالة لحساب اسم اليوم / Compute day name
     # -------------------------
     @api.depends('date')
     def _compute_day_name(self):
@@ -32,7 +33,7 @@ class SSCAttendance(models.Model):
             rec.day_name = rec.date.strftime('%A') if rec.date else ''
 
     # -------------------------
-    # Create daily attendance automatically
+    # إنشاء سجل يومي تلقائي / Auto-create daily attendance
     # -------------------------
     @api.model
     def create_daily_attendance(self):
@@ -55,7 +56,7 @@ class SSCAttendance(models.Model):
             current_date += timedelta(days=1)
 
     # -------------------------
-    # Override create to populate lines
+    # إعادة كتابة دالة create لإضافة الخطوط تلقائي / Override create to populate lines
     # -------------------------
     @api.model
     def create(self, vals):
@@ -65,7 +66,7 @@ class SSCAttendance(models.Model):
         return record
 
     # -------------------------
-    # Populate attendance lines for employees
+    # تعبئة خطوط الحضور تلقائي للموظفين / Populate attendance lines for employees
     # -------------------------
     def _populate_lines(self):
         self.ensure_one()
@@ -84,13 +85,23 @@ class SSCAttendance(models.Model):
             self.write({'line_ids': lines})
 
     # -------------------------
-    # Fetch BioCloud data
+    # مساعدة: تنظيف badge (إزالة أي رموز غير أرقام/حروف) / Normalize badge
+    # -------------------------
+    def _normalize_badge(self, s):
+        if not s:
+            return ''
+        # keep only alphanumeric characters, uppercase
+        return re.sub(r'[^A-Za-z0-9]', '', str(s)).upper()
+
+    # -------------------------
+    # جلب بيانات BioCloud / Fetch attendance data from BioCloud API
     # -------------------------
     def fetch_bioclock_data(self):
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"token": token, "Content-Type": "application/json"}
 
+        # الفترة التي نطلبها من الـ API (آخر 24 ساعة) — منطقك نفسه
         end_date = datetime.now()
         start_date = end_date - timedelta(days=1)
 
@@ -99,6 +110,7 @@ class SSCAttendance(models.Model):
             "EndDate": end_date.strftime("%Y-%m-%d 23:59:59")
         }
 
+        # عدادات وـ logs للمساعدة في التتبع
         synced_count = 0
         total_records = 0
         matched_attendance = 0
@@ -106,84 +118,133 @@ class SSCAttendance(models.Model):
         errors = []
 
         try:
+            # استدعاء API
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             if response.status_code != 200:
                 raise Exception(f"Error fetching data: {response.status_code} - {response.text}")
 
             data = response.json()
-            if "result" in data and data["result"] != "Success":
-                raise Exception(data.get("message", "Unexpected response"))
 
-            transactions = data.get("message", [])  # BioCloud API returns 'message' key
+            # بعض نسخ الـ API ترجع data تحت "message" وبعضها تحت "data"
+            if "result" in data and data["result"] not in ("Success", "OK"):
+                raise Exception(data.get("message", "Unexpected response from BioCloud"))
+
+            transactions = data.get("message") or data.get("data") or []
+            if transactions is None:
+                transactions = []
+
             Employee = self.env['x_employeeslist']
 
+            # نمر على كل عملية
             for trx in transactions:
                 total_records += 1
-                verify_time_str = trx.get("VerifyTime")
-                badge_number = trx.get("BadgeNumber")
-                device_serial = trx.get("DeviceSerialNumber")
+                line_obj = None  # سنتيحها للتسجيل في حالة حدوث استثناء لاحق
 
-                if not (verify_time_str and badge_number):
-                    errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
+                try:
+                    # استخراج الحقول الأساسية
+                    verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
+                    badge_number = trx.get("BadgeNumber")
+                    device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
+
+                    if not (verify_time_str and badge_number):
+                        errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
+                        continue
+
+                    # محاولة تحويل VerifyTime إلى datetime بأكثر من صيغة محتملة
+                    verify_dt = None
+                    try:
+                        # عادة يأتي بصيغة ISO: 2025-10-20T05:52:52
+                        verify_dt = datetime.fromisoformat(verify_time_str)
+                    except Exception:
+                        # fallback إلى صيغ شائعة
+                        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+                            try:
+                                verify_dt = datetime.strptime(verify_time_str, fmt)
+                                break
+                            except Exception:
+                                continue
+                    if not verify_dt:
+                        errors.append(f"Unparseable VerifyTime: {verify_time_str}")
+                        continue
+
+                    verify_date = verify_dt.date()
+
+                    # البحث عن سجل attendance لذلك اليوم أو إنشاؤه (منطقك لم يتغير)
+                    attendance = self.search([('date', '=', verify_date)], limit=1)
+                    if not attendance:
+                        attendance = self.create({
+                            'name': str(verify_date),
+                            'date': verify_date,
+                            'type': 'Off Day' if verify_date.weekday() == 4 else 'Regular Day'
+                        })
+                    matched_attendance += 1
+
+                    # تطبيع الـ badge (إزالة الشرطات، المسافات، تحويل لأحرف كبيرة)
+                    badge_clean = self._normalize_badge(badge_number)
+                    employee = None
+
+                    # البحث عن الموظف بحيث نقارن القيم بعد التطبيع
+                    for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
+                        emp_badge_raw = emp.x_studio_attendance_id or ''
+                        emp_badge = self._normalize_badge(emp_badge_raw)
+                        if emp_badge and emp_badge == badge_clean:
+                            employee = emp
+                            break
+
+                    if not employee:
+                        # لا يوجد موظف مطابق — نسجل الخطأ وننتقل
+                        errors.append(f"No employee match for badge {badge_number}")
+                        continue
+                    matched_employee += 1
+
+                    # الآن نجهز قيم السطر
+                    line_vals = {
+                        'employee_id': employee.id,
+                        'attendance_id': employee.x_studio_attendance_id or '',
+                        'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
+                        'staff': employee.x_studio_engineeroffice_staff,
+                        'on_leave': employee.x_studio_on_leave,
+                        'first_punch': verify_dt,
+                        'last_punch': verify_dt,
+                        'punch_machine_id': device_serial or '',
+                        'error_note': None
+                    }
+
+                    # إن وجد سطر لنفس الموظف في نفس الـ attendance نحدّثه، وإلا نضيفه عبر write على line_ids
+                    existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
+                    if existing_line:
+                        existing_line.write(line_vals)
+                        line_obj = existing_line
+                    else:
+                        # كتابة في attendance.line_ids لضمان ظهور الـ One2many في الواجهة
+                        attendance.write({'line_ids': [(0, 0, line_vals)]})
+                        # الحصول على السطر الذي أُنشئ حديثًا (نبحث عنه الآن)
+                        new_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
+                        if new_line:
+                            line_obj = new_line[0]
+
+                    synced_count += 1
+
+                except Exception as sub_e:
+                    # تسجيل الخطأ وتخزينه في سطر (إذا كان موجودًا)
+                    err_msg = f"Error processing Badge {trx.get('BadgeNumber')}: {sub_e}"
+                    errors.append(err_msg)
+                    try:
+                        if line_obj:
+                            line_obj.error_note = err_msg
+                    except Exception:
+                        # لا نفشل العملية الرئيسية بسبب خطأ في تسجيل الملاحظة
+                        pass
                     continue
 
-                verify_dt = datetime.fromisoformat(verify_time_str)
-                verify_date = verify_dt.date()
-
-                # تأكد من وجود سجل حضور لليوم أو إنشاؤه
-                attendance = self.search([('date', '=', verify_date)], limit=1)
-                if not attendance:
-                    attendance = self.create({
-                        'name': str(verify_date),
-                        'date': verify_date,
-                        'type': 'Off Day' if verify_date.weekday() == 4 else 'Regular Day'
-                    })
-                matched_attendance += 1
-
-                # مطابقة الموظف
-                badge_clean = badge_number.replace('-', '').strip()
-                employee = None
-                for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
-                    emp_badge = emp.x_studio_attendance_id.replace('-', '').strip()
-                    if emp_badge == badge_clean:
-                        employee = emp
-                        break
-                if not employee:
-                    errors.append(f"No employee match for badge {badge_number}")
-                    continue
-                matched_employee += 1
-
-                # تحديث أو إنشاء سطر الموظف باستخدام write على line_ids
-                line_vals = {
-                    'employee_id': employee.id,
-                    'attendance_id': employee.x_studio_attendance_id or '',
-                    'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
-                    'staff': employee.x_studio_engineeroffice_staff,
-                    'on_leave': employee.x_studio_on_leave,
-                    'first_punch': verify_dt,
-                    'last_punch': verify_dt,
-                    'punch_machine_id': device_serial,
-                    'error_note': None
-                }
-
-                # تحقق إذا السطر موجود مسبقًا
-                existing_line = attendance.line_ids.filtered(lambda l: l.employee_id == employee)
-                if existing_line:
-                    existing_line.write(line_vals)
-                else:
-                    attendance.write({'line_ids': [(0, 0, line_vals)]})
-
-                synced_count += 1
-
+            # نهاية معالجة كل السجلات — نعرض ملخص
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
                     'title': 'BioCloud Sync',
-                    'message': f'{synced_count} records synced.\n'
-                               f'Total received: {total_records}\n'
-                               f'Matched attendance days: {matched_attendance}\n'
-                               f'Matched employees: {matched_employee}\n'
+                    'message': f'{synced_count} records synced. Total received: {total_records} '
+                               f'Matched attendance days: {matched_attendance} Matched employees: {matched_employee} '
                                f'Errors: {len(errors)}',
                     'type': 'success' if synced_count > 0 else 'warning',
                     'sticky': False,
@@ -191,6 +252,7 @@ class SSCAttendance(models.Model):
             }
 
         except Exception as e:
+            # في حال فشل شامل نعرض رسالة مفصلة
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -250,13 +312,14 @@ class SSCAttendanceLine(models.Model):
     @api.depends('first_punch', 'employee_id')
     def _compute_absent(self):
         for rec in self:
-            # إذا الموظف على leave => absent = False
+            # إذا الموظف على إجازة => absent = False
             if rec.on_leave:
                 rec.absent = False
             # الجمعة considered off day
-            elif rec.external_id.date and rec.external_id.date.weekday() == 4:
+            elif rec.external_id and rec.external_id.date and rec.external_id.date.weekday() == 4:
                 rec.absent = False
             else:
+                # الغياب يحسب فقط بناءً على وجود أول بصمة
                 rec.absent = not bool(rec.first_punch)
 
     @api.depends('employee_id')
