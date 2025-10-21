@@ -102,6 +102,12 @@ class SSCAttendance(models.Model):
             "EndDate": end_date.strftime("%Y-%m-%d 23:59:59")
         }
 
+        synced_count = 0
+        total_records = 0
+        matched_attendance = 0
+        matched_employee = 0
+        errors = []
+
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             if response.status_code != 200:
@@ -113,11 +119,6 @@ class SSCAttendance(models.Model):
 
             transactions = data.get("data", [])
             Employee = self.env['x_employeeslist']
-
-            synced_count = 0
-            total_records = 0
-            matched_attendance = 0
-            matched_employee = 0
 
             for trx in transactions:
                 try:
@@ -132,14 +133,18 @@ class SSCAttendance(models.Model):
                     verify_dt = datetime.fromisoformat(verify_time_str)
                     verify_date = verify_dt.date()
 
-                    # البحث عن سجل attendance في نفس اليوم
+                    # التأكد من وجود سجل حضور لليوم أو إنشاؤه تلقائياً
                     attendance = self.search([('date', '=', verify_date)], limit=1)
                     if not attendance:
-                        continue
+                        attendance = self.create({
+                            'name': str(verify_date),
+                            'date': verify_date,
+                            'type': 'Off Day' if verify_date.weekday() == 4 else 'Regular Day'
+                        })
                     matched_attendance += 1
 
                     # مطابقة الموظف بعد إزالة "-" ومسافات إضافية
-                    badge_clean = badge_number.strip()
+                    badge_clean = badge_number.replace('-', '').strip()
                     employee = None
                     for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
                         emp_badge = emp.x_studio_attendance_id.replace('-', '').strip()
@@ -147,14 +152,27 @@ class SSCAttendance(models.Model):
                             employee = emp
                             break
                     if not employee:
+                        errors.append(f"No employee match for badge {badge_number}")
                         continue
                     matched_employee += 1
 
+                    # البحث عن سطر الموظف
                     line = attendance.line_ids.filtered(lambda l: l.employee_id == employee)
                     if not line:
-                        continue
-                    line = line[0]
+                        # إنشاء السطر إذا لم يكن موجود
+                        line_vals = {
+                            'employee_id': employee.id,
+                            'attendance_id': employee.x_studio_attendance_id or '',
+                            'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
+                            'staff': employee.x_studio_engineeroffice_staff,
+                            'on_leave': employee.x_studio_on_leave,
+                            'external_id': attendance.id,
+                        }
+                        line = self.env['ssc.attendance.line'].create(line_vals)
+                    else:
+                        line = line[0]
 
+                    # تحديث بيانات الحضور
                     if not line.first_punch:
                         line.first_punch = verify_dt
                     line.last_punch = verify_dt
@@ -162,7 +180,8 @@ class SSCAttendance(models.Model):
 
                     synced_count += 1
 
-                except Exception:
+                except Exception as sub_e:
+                    errors.append(f"Error processing record {trx.get('BadgeNumber')}: {sub_e}")
                     continue
 
             return {
@@ -173,7 +192,8 @@ class SSCAttendance(models.Model):
                     'message': f'{synced_count} records synced.\n'
                                f'Total received: {total_records}\n'
                                f'Matched attendance days: {matched_attendance}\n'
-                               f'Matched employees: {matched_employee}',
+                               f'Matched employees: {matched_employee}\n'
+                               f'Errors: {len(errors)}',
                     'type': 'success' if synced_count > 0 else 'warning',
                     'sticky': False,
                 }
