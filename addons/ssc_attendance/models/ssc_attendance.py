@@ -73,33 +73,80 @@ class SSCAttendance(models.Model):
         """Fetch attendance data from BioCloud API"""
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
-        headers = {"Authorization": f"Token {token}"}
+        headers = {
+            "token": token,
+            "Content-Type": "application/json"
+        }
+
+        # تحديد التاريخ الحالي (يوم واحد قبل واليوم)
+        end_date = datetime.now()
+        start_date = end_date - timedelta(days=1)
+
+        payload = {
+            "StartDate": start_date.strftime("%Y-%m-%d 00:00:00"),
+            "EndDate": end_date.strftime("%Y-%m-%d 23:59:59")
+        }
 
         try:
-            response = requests.get(url, headers=headers, timeout=30)
+            # استدعاء API
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
             if response.status_code != 200:
-                raise Exception(f"Error fetching data: {response.status_code}")
+                raise Exception(f"Error fetching data: {response.status_code} - {response.text}")
 
             data = response.json()
-            for entry in data.get('data', []):
-                entry_date = datetime.strptime(entry.get('date'), '%Y-%m-%d').date()
-                existing = self.search([('date', '=', entry_date)], limit=1)
-                if existing:
-                    continue 
 
-                vals = {
-                    'name': str(entry_date),
-                    'date': entry_date,
-                    'type': 'Regular Day',
-                }
-                self.create(vals)
+            if "result" in data and data["result"] != "OK":
+                raise Exception(data.get("message", "Unexpected response"))
+
+            transactions = data.get("data", [])
+
+            Employee = self.env['x_employeeslist']
+
+            for trx in transactions:
+                try:
+                    verify_time_str = trx.get("VerifyTime")
+                    badge_number = trx.get("BadgeNumber")
+                    device_serial = trx.get("DeviceSerialNumber")
+
+                    if not (verify_time_str and badge_number):
+                        continue
+
+                    # تحويل VerifyTime إلى datetime
+                    verify_dt = datetime.fromisoformat(verify_time_str)
+                    verify_date = verify_dt.date()
+
+                    # 🔍 البحث عن سجل attendance في نفس التاريخ
+                    attendance = self.search([('date', '=', verify_date)], limit=1)
+                    if not attendance:
+                        continue
+
+                    # 🔍 البحث عن الموظف المطابق للـ BadgeNumber
+                    employee = Employee.search([('x_studio_attendance_id', '=', badge_number)], limit=1)
+                    if not employee:
+                        continue
+
+                    # 🔍 البحث عن سطر الموظف في attendance line
+                    line = attendance.line_ids.filtered(lambda l: l.employee_id == employee)
+                    if not line:
+                        continue
+                    line = line[0]
+
+                    # ✅ تعبئة الحقول المطلوبة
+                    if not line.first_punch:
+                        line.first_punch = verify_dt
+                    line.last_punch = verify_dt
+                    line.punch_machine_id = device_serial
+
+                except Exception as sub_e:
+                    # تجاوز الخطأ في السطر الواحد حتى ما يوقف الباقي
+                    continue
 
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
                     'title': 'BioCloud Sync',
-                    'message': 'Attendance data synced successfully!',
+                    'message': f'{len(transactions)} records synced successfully!',
                     'type': 'success',
                     'sticky': False,
                 }
