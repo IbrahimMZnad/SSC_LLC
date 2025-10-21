@@ -87,7 +87,6 @@ class SSCAttendance(models.Model):
     # جلب بيانات BioCloud / Fetch BioCloud data
     # -------------------------
     def fetch_bioclock_data(self):
-        """جلب بيانات الحضور من BioCloud / Fetch attendance data from BioCloud API"""
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {
@@ -95,7 +94,6 @@ class SSCAttendance(models.Model):
             "Content-Type": "application/json"
         }
 
-        # تحديد فترة جلب البيانات (اليوم السابق واليوم الحالي) / Define date range
         end_date = datetime.now()
         start_date = end_date - timedelta(days=1)
 
@@ -105,7 +103,6 @@ class SSCAttendance(models.Model):
         }
 
         try:
-            # استدعاء API / Call API
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             if response.status_code != 200:
                 raise Exception(f"Error fetching data: {response.status_code} - {response.text}")
@@ -117,10 +114,14 @@ class SSCAttendance(models.Model):
             transactions = data.get("data", [])
             Employee = self.env['x_employeeslist']
 
-            synced_count = 0  # عداد السجلات المتزامنة / Counter
+            synced_count = 0
+            total_records = 0
+            matched_attendance = 0
+            matched_employee = 0
 
             for trx in transactions:
                 try:
+                    total_records += 1
                     verify_time_str = trx.get("VerifyTime")
                     badge_number = trx.get("BadgeNumber")
                     device_serial = trx.get("DeviceSerialNumber")
@@ -128,32 +129,32 @@ class SSCAttendance(models.Model):
                     if not (verify_time_str and badge_number):
                         continue
 
-                    # تحويل VerifyTime إلى datetime / Convert VerifyTime to datetime
                     verify_dt = datetime.fromisoformat(verify_time_str)
-                    verify_date = verify_dt.date()  # استخدام اليوم فقط للمقارنة / Use only date
+                    verify_date = verify_dt.date()
 
-                    # البحث عن سجل attendance في نفس اليوم / Search attendance record by date
+                    # البحث عن سجل attendance في نفس اليوم
                     attendance = self.search([('date', '=', verify_date)], limit=1)
                     if not attendance:
                         continue
+                    matched_attendance += 1
 
-                    # البحث عن الموظف المطابق للـ BadgeNumber مع تجاهل الفاصلة / Match employee ignoring "-"
-                    emp_matched = None
+                    # مطابقة الموظف بعد إزالة "-" ومسافات إضافية
+                    badge_clean = badge_number.strip()
+                    employee = None
                     for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
-                        if emp.x_studio_attendance_id.replace('-', '') == badge_number:
-                            emp_matched = emp
+                        emp_badge = emp.x_studio_attendance_id.replace('-', '').strip()
+                        if emp_badge == badge_clean:
+                            employee = emp
                             break
-                    employee = emp_matched
                     if not employee:
                         continue
+                    matched_employee += 1
 
-                    # البحث عن سطر الموظف في attendance line / Search employee line
                     line = attendance.line_ids.filtered(lambda l: l.employee_id == employee)
                     if not line:
                         continue
                     line = line[0]
 
-                    # تعبئة الحقول المطلوبة / Fill punch data
                     if not line.first_punch:
                         line.first_punch = verify_dt
                     line.last_punch = verify_dt
@@ -161,18 +162,19 @@ class SSCAttendance(models.Model):
 
                     synced_count += 1
 
-                except Exception as sub_e:
-                    # تجاوز الخطأ في السطر الواحد / Skip single line errors
+                except Exception:
                     continue
 
-            # إظهار عدد السجلات المتزامنة / Display synced count
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
                 'params': {
                     'title': 'BioCloud Sync',
-                    'message': f'{synced_count} records synced successfully!',
-                    'type': 'success',
+                    'message': f'{synced_count} records synced.\n'
+                               f'Total received: {total_records}\n'
+                               f'Matched attendance days: {matched_attendance}\n'
+                               f'Matched employees: {matched_employee}',
+                    'type': 'success' if synced_count > 0 else 'warning',
                     'sticky': False,
                 }
             }
@@ -183,7 +185,7 @@ class SSCAttendance(models.Model):
                 'tag': 'display_notification',
                 'params': {
                     'title': 'Sync Error',
-                    'message': str(e),
+                    'message': f"Error: {str(e)}",
                     'type': 'danger',
                     'sticky': True,
                 }
