@@ -1,7 +1,9 @@
+# -*- coding: utf-8 -*-
 from odoo import models, fields, api
 from datetime import date, timedelta, datetime
 import requests
 import re
+from collections import defaultdict
 
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
@@ -95,13 +97,26 @@ class SSCAttendance(models.Model):
 
     # -------------------------
     # جلب بيانات BioCloud / Fetch attendance data from BioCloud API
+    # شرح مفصّل داخل الكومنتس بالعربي عشان تكون القراءة واضحة
     # -------------------------
     def fetch_bioclock_data(self):
+        """
+        الخوارزمية العامة:
+        1) نجيب كل transactions من API (تحت 'message' أو 'data').
+        2) نتجاهل سجلات انقطاع الجهاز (VerifyType == 'Interruption') أو السجلات الناقصة.
+        3) نجمع البصمات في dict حسب (badge_clean, verify_date) => list of (dt, device)
+        4) بعد جمع كل البصمات نمرّ على كل مجموعة:
+           - نحسب first_punch = min(dt) و last_punch = max(dt)
+           - نختار punch_machine_id بناءً على الجهاز الذي لديه أكبر span (max(timestamp) - min(timestamp)) ضمن ذلك الـ badge/day
+           - نجد attendance record لذلك التاريخ (أو ننشئه) ونحدّث أو ننشئ سطر الـ attendance.line عبر attendance.write({'line_ids': [...]})
+        5) نرجع تقرير مبسّط بعد الانتهاء.
+        """
+
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"token": token, "Content-Type": "application/json"}
 
-        # الفترة التي نطلبها من الـ API (آخر 24 ساعة) — منطقك نفسه
+        # الفترة: آخر 24 ساعة — هذا منطقك الأصلي
         end_date = datetime.now()
         start_date = end_date - timedelta(days=1)
 
@@ -110,7 +125,7 @@ class SSCAttendance(models.Model):
             "EndDate": end_date.strftime("%Y-%m-%d 23:59:59")
         }
 
-        # عدادات وـ logs للمساعدة في التتبع
+        # عدادات وتقارير
         synced_count = 0
         total_records = 0
         matched_attendance = 0
@@ -118,126 +133,175 @@ class SSCAttendance(models.Model):
         errors = []
 
         try:
-            # استدعاء API
+            # 1) استدعاء API
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             if response.status_code != 200:
                 raise Exception(f"Error fetching data: {response.status_code} - {response.text}")
 
             data = response.json()
 
-            # بعض نسخ الـ API ترجع data تحت "message" وبعضها تحت "data"
+            # API ممكن ترجع النتائج تحت 'message' أو 'data'
             if "result" in data and data["result"] not in ("Success", "OK"):
+                # لو النتيجة غير ناجحة نرفع استثناء
                 raise Exception(data.get("message", "Unexpected response from BioCloud"))
 
             transactions = data.get("message") or data.get("data") or []
             if transactions is None:
                 transactions = []
 
+            # 2) نجمع البصمات حسب badge_clean + verify_date
+            groups = defaultdict(list)  # key = (badge_clean, date), value = list of (dt, device, raw_trx)
             Employee = self.env['x_employeeslist']
 
-            # نمر على كل عملية
             for trx in transactions:
                 total_records += 1
-                line_obj = None  # سنتيحها للتسجيل في حالة حدوث استثناء لاحق
+                # استبعاد أنواع غير ضرورية أو ناقصة
+                verify_type = (trx.get("VerifyType") or '').strip()
+                if verify_type and verify_type.lower() == 'interruption':
+                    # تخطّي سجلات الـ Interruption لأنها ليست بصمات موظف
+                    continue
 
+                verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
+                badge_number = trx.get("BadgeNumber")
+                device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
+
+                if not (verify_time_str and badge_number):
+                    errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
+                    continue
+
+                # تحويل VerifyTime إلى datetime عبر محاولات لعدة صيغ
+                verify_dt = None
+                # غالباً يأتي بتنسيق ISO مثل 2025-10-20T05:52:52
+                # نحاول fromisoformat أولاً ثم نجرّب فورماتات شائعة كـ fallback
                 try:
-                    # استخراج الحقول الأساسية
-                    verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
-                    badge_number = trx.get("BadgeNumber")
-                    device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
-
-                    if not (verify_time_str and badge_number):
-                        errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
-                        continue
-
-                    # محاولة تحويل VerifyTime إلى datetime بأكثر من صيغة محتملة
-                    verify_dt = None
-                    try:
-                        # عادة يأتي بصيغة ISO: 2025-10-20T05:52:52
-                        verify_dt = datetime.fromisoformat(verify_time_str)
-                    except Exception:
-                        # fallback إلى صيغ شائعة
-                        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
-                            try:
-                                verify_dt = datetime.strptime(verify_time_str, fmt)
-                                break
-                            except Exception:
-                                continue
-                    if not verify_dt:
-                        errors.append(f"Unparseable VerifyTime: {verify_time_str}")
-                        continue
-
-                    verify_date = verify_dt.date()
-
-                    # البحث عن سجل attendance لذلك اليوم أو إنشاؤه (منطقك لم يتغير)
-                    attendance = self.search([('date', '=', verify_date)], limit=1)
-                    if not attendance:
-                        attendance = self.create({
-                            'name': str(verify_date),
-                            'date': verify_date,
-                            'type': 'Off Day' if verify_date.weekday() == 4 else 'Regular Day'
-                        })
-                    matched_attendance += 1
-
-                    # تطبيع الـ badge (إزالة الشرطات، المسافات، تحويل لأحرف كبيرة)
-                    badge_clean = self._normalize_badge(badge_number)
-                    employee = None
-
-                    # البحث عن الموظف بحيث نقارن القيم بعد التطبيع
-                    for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
-                        emp_badge_raw = emp.x_studio_attendance_id or ''
-                        emp_badge = self._normalize_badge(emp_badge_raw)
-                        if emp_badge and emp_badge == badge_clean:
-                            employee = emp
+                    # Python fromisoformat يتعامل مع 'YYYY-MM-DDTHH:MM:SS'
+                    verify_dt = datetime.fromisoformat(verify_time_str)
+                except Exception:
+                    # fallback formats
+                    for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+                        try:
+                            verify_dt = datetime.strptime(verify_time_str, fmt)
                             break
+                        except Exception:
+                            continue
+
+                if not verify_dt:
+                    errors.append(f"Unparseable VerifyTime: {verify_time_str}")
+                    continue
+
+                verify_date = verify_dt.date()
+                badge_clean = self._normalize_badge(badge_number)
+                if not badge_clean:
+                    errors.append(f"Empty badge after normalize: {badge_number}")
+                    continue
+
+                # اجمع البصمات في المجموعة المناسبة
+                groups[(badge_clean, verify_date)].append((verify_dt, device_serial or '', trx))
+
+            # 3) نجهز caches لتقليل الاستعلامات DB
+            attendance_cache = {}
+            employee_cache = {}
+
+            # 4) نُعالج كل مجموعة (كل موظف لكل يوم مرة واحدة)
+            for (badge_clean, v_date), events in groups.items():
+                # events: list of (dt, device, trx)
+                try:
+                    # ترتيب التايمستامب
+                    events_sorted = sorted(events, key=lambda x: x[0])
+                    first_dt = events_sorted[0][0]
+                    last_dt = events_sorted[-1][0]
+
+                    # اختيار الجهاز الذي يعطي أكبر مدة span لنفس الموظف في ذلك اليوم
+                    # نحسب span لكل جهاز: max(dt) - min(dt) داخل هذا اليوم لذلك الجهاز
+                    device_events = defaultdict(list)
+                    for dt, device, _ in events_sorted:
+                        device_key = device or ''
+                        device_events[device_key].append(dt)
+
+                    # حساب span لكل جهاز
+                    device_spans = {}
+                    for dev, dts in device_events.items():
+                        if not dts:
+                            device_spans[dev] = timedelta(0)
+                        else:
+                            device_spans[dev] = max(dts) - min(dts)
+
+                    # نختار الجهاز ذو أعلى span. لو كلهم صفر نأخذ الجهاز الأخير الموجود.
+                    chosen_device = ''
+                    if device_spans:
+                        # ترتيب بحسب span ثم بحسب آخر ظهور للتعادل
+                        chosen_device = max(device_spans.items(), key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min))[0]
+                    else:
+                        chosen_device = ''
+
+                    # الآن نبحث عن employee عبر badge_clean
+                    employee = employee_cache.get(badge_clean)
+                    if not employee:
+                        # استعلام واحد شامل قد يكون مكلفاً لو فيه آلاف، لكن نستخدم search محدد
+                        # نبحث بين الموظفين الذين لديهم قيمة attendance id
+                        emp_found = None
+                        for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
+                            emp_badge = self._normalize_badge(emp.x_studio_attendance_id or '')
+                            if emp_badge == badge_clean:
+                                emp_found = emp
+                                break
+                        if emp_found:
+                            employee_cache[badge_clean] = emp_found
+                            employee = emp_found
 
                     if not employee:
-                        # لا يوجد موظف مطابق — نسجل الخطأ وننتقل
-                        errors.append(f"No employee match for badge {badge_number}")
+                        # لا يوجد موظف مطابق — نضيف لملاحظات ونكمل
+                        errors.append(f"No employee match for badge {badge_clean} on {v_date}")
                         continue
                     matched_employee += 1
 
-                    # الآن نجهز قيم السطر
+                    # الحصول على attendance للسنة/الشهر/اليوم هذا (cache)
+                    attendance = attendance_cache.get(v_date)
+                    if not attendance:
+                        attendance = self.search([('date', '=', v_date)], limit=1)
+                        if not attendance:
+                            # لو مش موجود ننشئ record جديد (منطقك موجود أصلاً)
+                            attendance = self.create({
+                                'name': str(v_date),
+                                'date': v_date,
+                                'type': 'Off Day' if v_date.weekday() == 4 else 'Regular Day'
+                            })
+                        attendance_cache[v_date] = attendance
+                    matched_attendance += 1
+
+                    # الآن نجهز قيم السطر النهائي
                     line_vals = {
                         'employee_id': employee.id,
                         'attendance_id': employee.x_studio_attendance_id or '',
                         'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
                         'staff': employee.x_studio_engineeroffice_staff,
                         'on_leave': employee.x_studio_on_leave,
-                        'first_punch': verify_dt,
-                        'last_punch': verify_dt,
-                        'punch_machine_id': device_serial or '',
+                        'first_punch': first_dt,
+                        'last_punch': last_dt,
+                        'punch_machine_id': chosen_device or '',
                         'error_note': None
                     }
 
-                    # إن وجد سطر لنفس الموظف في نفس الـ attendance نحدّثه، وإلا نضيفه عبر write على line_ids
+                    # نتحقق لو في سطر موجود ونحدّثه أو نضيف جديد عبر write على line_ids
                     existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
                     if existing_line:
-                        existing_line.write(line_vals)
-                        line_obj = existing_line
+                        # نكتب فقط الحقول الضرورية لتحديث البصمات والأجهزة
+                        existing_line.write({
+                            'first_punch': min(existing_line.first_punch or first_dt, first_dt),
+                            'last_punch': max(existing_line.last_punch or last_dt, last_dt),
+                            'punch_machine_id': chosen_device or (existing_line.punch_machine_id or ''),
+                            'error_note': None
+                        })
                     else:
-                        # كتابة في attendance.line_ids لضمان ظهور الـ One2many في الواجهة
                         attendance.write({'line_ids': [(0, 0, line_vals)]})
-                        # الحصول على السطر الذي أُنشئ حديثًا (نبحث عنه الآن)
-                        new_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
-                        if new_line:
-                            line_obj = new_line[0]
 
                     synced_count += 1
 
                 except Exception as sub_e:
-                    # تسجيل الخطأ وتخزينه في سطر (إذا كان موجودًا)
-                    err_msg = f"Error processing Badge {trx.get('BadgeNumber')}: {sub_e}"
-                    errors.append(err_msg)
-                    try:
-                        if line_obj:
-                            line_obj.error_note = err_msg
-                    except Exception:
-                        # لا نفشل العملية الرئيسية بسبب خطأ في تسجيل الملاحظة
-                        pass
+                    errors.append(f"Error processing group {badge_clean} {v_date}: {sub_e}")
                     continue
 
-            # نهاية معالجة كل السجلات — نعرض ملخص
+            # 5) بعد الانتهاء نعرض ملخص
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
