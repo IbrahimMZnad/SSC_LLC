@@ -71,7 +71,7 @@ class SSCAttendance(models.Model):
     # 🔄 زر أو كرون لجلب البيانات من BioCloud
     def fetch_bioclock_data(self):
         """Fetch attendance data from BioCloud API"""
-        url = "https://57.biocloud.me:8199"
+        url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"Authorization": f"Token {token}"}
 
@@ -85,7 +85,7 @@ class SSCAttendance(models.Model):
                 entry_date = datetime.strptime(entry.get('date'), '%Y-%m-%d').date()
                 existing = self.search([('date', '=', entry_date)], limit=1)
                 if existing:
-                    continue  # موجودة بالفعل
+                    continue 
 
                 vals = {
                     'name': str(entry_date),
