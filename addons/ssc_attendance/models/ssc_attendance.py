@@ -68,7 +68,8 @@ class SSCAttendance(models.Model):
         if lines:
             self.write({'line_ids': lines})
 
-    # 🔄 زر أو كرون لجلب البيانات من BioCloud
+    # 🔄 Fetch BioCloud data manually or by cron
+    # دالة لجلب الحضور من النظام الخارجي (BioCloud)
     def fetch_bioclock_data(self):
         """Fetch attendance data from BioCloud API"""
         url = "https://57.biocloud.me:8199/api_gettransctions"
@@ -78,7 +79,7 @@ class SSCAttendance(models.Model):
             "Content-Type": "application/json"
         }
 
-        # تحديد التاريخ الحالي (يوم واحد قبل واليوم)
+        # ⏰ تحديد المدى الزمني (من يوم سابق إلى اليوم)
         end_date = datetime.now()
         start_date = end_date - timedelta(days=1)
 
@@ -88,17 +89,18 @@ class SSCAttendance(models.Model):
         }
 
         try:
-            # استدعاء API
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             if response.status_code != 200:
                 raise Exception(f"Error fetching data: {response.status_code} - {response.text}")
 
             data = response.json()
 
-            if "result" in data and data["result"] != "OK":
-                raise Exception(data.get("message", "Unexpected response"))
-
-            transactions = data.get("data", [])
+            # 🔍 BioCloud sometimes returns a list directly, not wrapped inside "data"
+            # النظام أحياناً يرجّع list مباشرة بدون مفتاح data
+            if isinstance(data, dict):
+                transactions = data.get("data", [])
+            else:
+                transactions = data
 
             Employee = self.env['x_employeeslist']
 
@@ -111,36 +113,38 @@ class SSCAttendance(models.Model):
                     if not (verify_time_str and badge_number):
                         continue
 
-                    # تحويل VerifyTime إلى datetime
+                    # 🕒 تحويل وقت البصمة إلى datetime
                     verify_dt = datetime.fromisoformat(verify_time_str)
                     verify_date = verify_dt.date()
 
-                    # 🔍 البحث عن سجل attendance في نفس التاريخ
+                    # 🔍 إيجاد سجل attendance بنفس التاريخ
                     attendance = self.search([('date', '=', verify_date)], limit=1)
                     if not attendance:
                         continue
 
-                    # 🔍 البحث عن الموظف المطابق للـ BadgeNumber
+                    # 🔍 إيجاد الموظف عبر رقم البطاقة
                     employee = Employee.search([('x_studio_attendance_id', '=', badge_number)], limit=1)
                     if not employee:
                         continue
 
-                    # 🔍 البحث عن سطر الموظف في attendance line
+                    # 🔍 إيجاد السطر الخاص بالموظف داخل الجدول
                     line = attendance.line_ids.filtered(lambda l: l.employee_id == employee)
                     if not line:
                         continue
                     line = line[0]
 
-                    # ✅ تعبئة الحقول المطلوبة
+                    # ✅ تحديث أول وآخر بصمة ورقم الجهاز
                     if not line.first_punch:
                         line.first_punch = verify_dt
                     line.last_punch = verify_dt
                     line.punch_machine_id = device_serial
 
                 except Exception as sub_e:
-                    # تجاوز الخطأ في السطر الواحد حتى ما يوقف الباقي
+                    # ⚠️ تجاهل الأخطاء الصغيرة بالسجلات الفردية
+                    # Avoid breaking loop on single record errors
                     continue
 
+            # ✅ إشعار نجاح المزامنة
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -153,6 +157,7 @@ class SSCAttendance(models.Model):
             }
 
         except Exception as e:
+            # ⚠️ إشعار في حال حدوث خطأ عام أثناء الاتصال
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -183,11 +188,14 @@ class SSCAttendanceLine(models.Model):
     staff = fields.Boolean(string="Staff", compute="_compute_staff", store=True)
     on_leave = fields.Boolean(string="On Leave", compute="_compute_on_leave", store=True)
 
+    # حساب الشركة من بيانات الموظف
+    # Compute the company from the employee record
     @api.depends('employee_id')
     def _compute_company(self):
         for rec in self:
             rec.company_id = rec.employee_id.x_studio_company.id if rec.employee_id and getattr(rec.employee_id, 'x_studio_company', False) else False
 
+    # حساب الوقت الكلي بين أول وآخر بصمة
     @api.depends('first_punch', 'last_punch')
     def _compute_total_time(self):
         for rec in self:
@@ -198,6 +206,7 @@ class SSCAttendanceLine(models.Model):
             else:
                 rec.total_time = 0.0
 
+    # حساب ساعات العمل الإضافي (إن وجدت)
     @api.depends('first_punch', 'last_punch')
     def _compute_total_ot(self):
         for rec in self:
@@ -208,6 +217,7 @@ class SSCAttendanceLine(models.Model):
             else:
                 rec.total_ot = 0.0
 
+    # تحديد الغياب بناءً على وجود بصمة أو لا
     @api.depends('first_punch')
     def _compute_absent(self):
         for rec in self:
@@ -216,11 +226,13 @@ class SSCAttendanceLine(models.Model):
             else:
                 rec.absent = not rec.first_punch
 
+    # تحديد إن كان الموظف من الكادر الإداري أو الميداني
     @api.depends('employee_id')
     def _compute_staff(self):
         for rec in self:
             rec.staff = rec.employee_id.x_studio_engineeroffice_staff if rec.employee_id else False
 
+    # تحديد إن كان الموظف في إجازة
     @api.depends('employee_id')
     def _compute_on_leave(self):
         for rec in self:
