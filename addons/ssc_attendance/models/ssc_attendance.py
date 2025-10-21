@@ -10,6 +10,9 @@ class SSCAttendance(models.Model):
         ('unique_date', 'unique(date)', 'Attendance record already exists for this date!')
     ]
 
+    # -------------------------
+    # الحقول الأساسية / Main Fields
+    # -------------------------
     name = fields.Char(string="Name", required=True, default=lambda self: str(date.today()))
     date = fields.Date(string="Date", default=fields.Date.context_today)
     type = fields.Selection(
@@ -20,11 +23,17 @@ class SSCAttendance(models.Model):
     day_name = fields.Char(string="Day Name", compute="_compute_day_name", store=True)
     line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
 
+    # -------------------------
+    # Compute day name
+    # -------------------------
     @api.depends('date')
     def _compute_day_name(self):
         for rec in self:
             rec.day_name = rec.date.strftime('%A') if rec.date else ''
 
+    # -------------------------
+    # Create daily attendance automatically
+    # -------------------------
     @api.model
     def create_daily_attendance(self):
         today = fields.Date.context_today(self)
@@ -45,6 +54,9 @@ class SSCAttendance(models.Model):
                 self.create(vals)
             current_date += timedelta(days=1)
 
+    # -------------------------
+    # Override create to populate lines
+    # -------------------------
     @api.model
     def create(self, vals):
         record = super().create(vals)
@@ -52,6 +64,9 @@ class SSCAttendance(models.Model):
             record._populate_lines()
         return record
 
+    # -------------------------
+    # Populate attendance lines for employees
+    # -------------------------
     def _populate_lines(self):
         self.ensure_one()
         Employee = self.env['x_employeeslist']
@@ -68,6 +83,9 @@ class SSCAttendance(models.Model):
         if lines:
             self.write({'line_ids': lines})
 
+    # -------------------------
+    # Fetch BioCloud data
+    # -------------------------
     def fetch_bioclock_data(self):
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
@@ -96,71 +114,66 @@ class SSCAttendance(models.Model):
             if "result" in data and data["result"] != "Success":
                 raise Exception(data.get("message", "Unexpected response"))
 
-            transactions = data.get("message", [])
+            transactions = data.get("message", [])  # BioCloud API returns 'message' key
             Employee = self.env['x_employeeslist']
 
             for trx in transactions:
-                line = None
-                try:
-                    total_records += 1
-                    verify_time_str = trx.get("VerifyTime")
-                    badge_number = trx.get("BadgeNumber")
-                    device_serial = trx.get("DeviceSerialNumber")
+                total_records += 1
+                verify_time_str = trx.get("VerifyTime")
+                badge_number = trx.get("BadgeNumber")
+                device_serial = trx.get("DeviceSerialNumber")
 
-                    if not (verify_time_str and badge_number):
-                        errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
-                        continue
-
-                    verify_dt = datetime.strptime(verify_time_str, "%Y-%m-%dT%H:%M:%S")
-                    verify_date = verify_dt.date()
-
-                    attendance = self.search([('date', '=', verify_date)], limit=1)
-                    if not attendance:
-                        attendance = self.create({
-                            'name': str(verify_date),
-                            'date': verify_date,
-                            'type': 'Off Day' if verify_date.weekday() == 4 else 'Regular Day'
-                        })
-                    matched_attendance += 1
-
-                    badge_clean = badge_number.replace('-', '').strip().upper()
-                    employee = None
-                    for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
-                        emp_badge = emp.x_studio_attendance_id.replace('-', '').strip().upper()
-                        if emp_badge == badge_clean:
-                            employee = emp
-                            break
-                    if not employee:
-                        errors.append(f"No employee match for badge {badge_number}")
-                        continue
-                    matched_employee += 1
-
-                    line = attendance.line_ids.filtered(lambda l: l.employee_id == employee)
-                    if not line:
-                        line_vals = {
-                            'employee_id': employee.id,
-                            'attendance_id': employee.x_studio_attendance_id or '',
-                            'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
-                            'staff': employee.x_studio_engineeroffice_staff,
-                            'on_leave': employee.x_studio_on_leave,
-                            'external_id': attendance.id,
-                            'error_note': None
-                        }
-                        line = self.env['ssc.attendance.line'].create(line_vals)
-                    else:
-                        line = line[0]
-
-                    line.first_punch = verify_dt
-                    line.last_punch = verify_dt
-                    line.punch_machine_id = device_serial
-
-                    synced_count += 1
-
-                except Exception as sub_e:
-                    errors.append(f"Error processing record {trx.get('BadgeNumber')}: {sub_e}")
-                    if line:
-                        line.error_note = str(sub_e)
+                if not (verify_time_str and badge_number):
+                    errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
                     continue
+
+                verify_dt = datetime.fromisoformat(verify_time_str)
+                verify_date = verify_dt.date()
+
+                # تأكد من وجود سجل حضور لليوم أو إنشاؤه
+                attendance = self.search([('date', '=', verify_date)], limit=1)
+                if not attendance:
+                    attendance = self.create({
+                        'name': str(verify_date),
+                        'date': verify_date,
+                        'type': 'Off Day' if verify_date.weekday() == 4 else 'Regular Day'
+                    })
+                matched_attendance += 1
+
+                # مطابقة الموظف
+                badge_clean = badge_number.replace('-', '').strip()
+                employee = None
+                for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
+                    emp_badge = emp.x_studio_attendance_id.replace('-', '').strip()
+                    if emp_badge == badge_clean:
+                        employee = emp
+                        break
+                if not employee:
+                    errors.append(f"No employee match for badge {badge_number}")
+                    continue
+                matched_employee += 1
+
+                # تحديث أو إنشاء سطر الموظف باستخدام write على line_ids
+                line_vals = {
+                    'employee_id': employee.id,
+                    'attendance_id': employee.x_studio_attendance_id or '',
+                    'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
+                    'staff': employee.x_studio_engineeroffice_staff,
+                    'on_leave': employee.x_studio_on_leave,
+                    'first_punch': verify_dt,
+                    'last_punch': verify_dt,
+                    'punch_machine_id': device_serial,
+                    'error_note': None
+                }
+
+                # تحقق إذا السطر موجود مسبقًا
+                existing_line = attendance.line_ids.filtered(lambda l: l.employee_id == employee)
+                if existing_line:
+                    existing_line.write(line_vals)
+                else:
+                    attendance.write({'line_ids': [(0, 0, line_vals)]})
+
+                synced_count += 1
 
             return {
                 'type': 'ir.actions.client',
@@ -234,13 +247,17 @@ class SSCAttendanceLine(models.Model):
             else:
                 rec.total_ot = 0.0
 
-    @api.depends('first_punch')
+    @api.depends('first_punch', 'employee_id')
     def _compute_absent(self):
         for rec in self:
-            if rec.external_id.date and rec.external_id.date.weekday() == 4:
+            # إذا الموظف على leave => absent = False
+            if rec.on_leave:
+                rec.absent = False
+            # الجمعة considered off day
+            elif rec.external_id.date and rec.external_id.date.weekday() == 4:
                 rec.absent = False
             else:
-                rec.absent = not rec.first_punch
+                rec.absent = not bool(rec.first_punch)
 
     @api.depends('employee_id')
     def _compute_staff(self):
