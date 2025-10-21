@@ -10,9 +10,6 @@ class SSCAttendance(models.Model):
         ('unique_date', 'unique(date)', 'Attendance record already exists for this date!')
     ]
 
-    # -------------------------
-    # الحقول الأساسية / Main Fields
-    # -------------------------
     name = fields.Char(string="Name", required=True, default=lambda self: str(date.today()))
     date = fields.Date(string="Date", default=fields.Date.context_today)
     type = fields.Selection(
@@ -23,17 +20,11 @@ class SSCAttendance(models.Model):
     day_name = fields.Char(string="Day Name", compute="_compute_day_name", store=True)
     line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
 
-    # -------------------------
-    # دالة لحساب اسم اليوم / Compute day name
-    # -------------------------
     @api.depends('date')
     def _compute_day_name(self):
         for rec in self:
             rec.day_name = rec.date.strftime('%A') if rec.date else ''
 
-    # -------------------------
-    # إنشاء سجل يومي تلقائي / Auto-create daily attendance
-    # -------------------------
     @api.model
     def create_daily_attendance(self):
         today = fields.Date.context_today(self)
@@ -54,9 +45,6 @@ class SSCAttendance(models.Model):
                 self.create(vals)
             current_date += timedelta(days=1)
 
-    # -------------------------
-    # إعادة كتابة دالة create لإضافة الخطوط تلقائي / Override create to populate lines
-    # -------------------------
     @api.model
     def create(self, vals):
         record = super().create(vals)
@@ -64,9 +52,6 @@ class SSCAttendance(models.Model):
             record._populate_lines()
         return record
 
-    # -------------------------
-    # تعبئة خطوط الحضور تلقائي للموظفين / Populate attendance lines for employees
-    # -------------------------
     def _populate_lines(self):
         self.ensure_one()
         Employee = self.env['x_employeeslist']
@@ -83,16 +68,10 @@ class SSCAttendance(models.Model):
         if lines:
             self.write({'line_ids': lines})
 
-    # -------------------------
-    # جلب بيانات BioCloud / Fetch BioCloud data
-    # -------------------------
     def fetch_bioclock_data(self):
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
-        headers = {
-            "token": token,
-            "Content-Type": "application/json"
-        }
+        headers = {"token": token, "Content-Type": "application/json"}
 
         end_date = datetime.now()
         start_date = end_date - timedelta(days=1)
@@ -128,12 +107,12 @@ class SSCAttendance(models.Model):
                     device_serial = trx.get("DeviceSerialNumber")
 
                     if not (verify_time_str and badge_number):
+                        errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
                         continue
 
                     verify_dt = datetime.fromisoformat(verify_time_str)
                     verify_date = verify_dt.date()
 
-                    # التأكد من وجود سجل حضور لليوم أو إنشاؤه تلقائياً
                     attendance = self.search([('date', '=', verify_date)], limit=1)
                     if not attendance:
                         attendance = self.create({
@@ -143,7 +122,6 @@ class SSCAttendance(models.Model):
                         })
                     matched_attendance += 1
 
-                    # مطابقة الموظف بعد إزالة "-" ومسافات إضافية
                     badge_clean = badge_number.replace('-', '').strip()
                     employee = None
                     for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
@@ -156,10 +134,8 @@ class SSCAttendance(models.Model):
                         continue
                     matched_employee += 1
 
-                    # البحث عن سطر الموظف
                     line = attendance.line_ids.filtered(lambda l: l.employee_id == employee)
                     if not line:
-                        # إنشاء السطر إذا لم يكن موجود
                         line_vals = {
                             'employee_id': employee.id,
                             'attendance_id': employee.x_studio_attendance_id or '',
@@ -167,12 +143,12 @@ class SSCAttendance(models.Model):
                             'staff': employee.x_studio_engineeroffice_staff,
                             'on_leave': employee.x_studio_on_leave,
                             'external_id': attendance.id,
+                            'error_note': None
                         }
                         line = self.env['ssc.attendance.line'].create(line_vals)
                     else:
                         line = line[0]
 
-                    # تحديث بيانات الحضور
                     if not line.first_punch:
                         line.first_punch = verify_dt
                     line.last_punch = verify_dt
@@ -182,7 +158,18 @@ class SSCAttendance(models.Model):
 
                 except Exception as sub_e:
                     errors.append(f"Error processing record {trx.get('BadgeNumber')}: {sub_e}")
+                    # حفظ الخطأ على السطر إذا كان موجود
+                    if line:
+                        line.error_note = str(sub_e)
                     continue
+
+            # حفظ جميع الأخطاء على مستوى Attendance Line إن وجد
+            if errors:
+                for err in errors:
+                    self.env['ssc.attendance.line'].create({
+                        'external_id': attendance.id,
+                        'error_note': err
+                    })
 
             return {
                 'type': 'ir.actions.client',
@@ -217,7 +204,7 @@ class SSCAttendanceLine(models.Model):
     _description = "Attendance Line"
 
     external_id = fields.Many2one('ssc.attendance', string="Attendance Reference", ondelete='cascade')
-    employee_id = fields.Many2one('x_employeeslist', string="Employee", required=True)
+    employee_id = fields.Many2one('x_employeeslist', string="Employee", required=False)
     company_id = fields.Many2one('res.company', string="Company", compute="_compute_company", store=True)
     attendance_id = fields.Char(string="Attendance ID")
     project_id = fields.Many2one('x_projects_list', string="Project")
@@ -229,6 +216,7 @@ class SSCAttendanceLine(models.Model):
     absent = fields.Boolean(string="Absent", compute="_compute_absent", store=True)
     staff = fields.Boolean(string="Staff", compute="_compute_staff", store=True)
     on_leave = fields.Boolean(string="On Leave", compute="_compute_on_leave", store=True)
+    error_note = fields.Text(string="Error Note")
 
     @api.depends('employee_id')
     def _compute_company(self):
