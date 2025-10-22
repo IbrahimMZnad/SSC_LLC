@@ -4,6 +4,7 @@ from datetime import date, timedelta, datetime
 import requests
 import re
 from collections import defaultdict
+from pytz import UTC, timezone
 
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
@@ -96,8 +97,7 @@ class SSCAttendance(models.Model):
         return re.sub(r'[^A-Za-z0-9]', '', str(s)).upper()
 
     # -------------------------
-    # جلب بيانات BioCloud / Fetch attendance data from BioCloud API
-    # شرح مفصّل داخل الكومنتس بالعربي عشان تكون القراءة واضحة
+    # استدعاء بيانات BioCloud / Fetch BioCloud attendance
     # -------------------------
     def fetch_bioclock_data(self):
         """
@@ -108,7 +108,7 @@ class SSCAttendance(models.Model):
         4) بعد جمع كل البصمات نمرّ على كل مجموعة:
            - نحسب first_punch = min(dt) و last_punch = max(dt)
            - نختار punch_machine_id بناءً على الجهاز الذي لديه أكبر span (max(timestamp) - min(timestamp)) ضمن ذلك الـ badge/day
-           - نجد attendance record لذلك التاريخ (أو ننشئه) ونحدّث أو ننشئ سطر الـ attendance.line عبر attendance.write({'line_ids': [...]})
+           - نجد attendance record لذلك التاريخ (أو ننشئه) ونحدّث أو ننشئ سطر الـ attendance.line عبر attendance.write({'line_ids': [...]}).
         5) نرجع تقرير مبسّط بعد الانتهاء.
         """
 
@@ -132,6 +132,9 @@ class SSCAttendance(models.Model):
         matched_employee = 0
         errors = []
 
+        # timezone local (Dubai) لتحويل الوقت من UTC
+        local_tz = timezone('Asia/Dubai')
+
         try:
             # 1) استدعاء API
             response = requests.post(url, headers=headers, json=payload, timeout=30)
@@ -139,10 +142,7 @@ class SSCAttendance(models.Model):
                 raise Exception(f"Error fetching data: {response.status_code} - {response.text}")
 
             data = response.json()
-
-            # API ممكن ترجع النتائج تحت 'message' أو 'data'
             if "result" in data and data["result"] not in ("Success", "OK"):
-                # لو النتيجة غير ناجحة نرفع استثناء
                 raise Exception(data.get("message", "Unexpected response from BioCloud"))
 
             transactions = data.get("message") or data.get("data") or []
@@ -155,10 +155,8 @@ class SSCAttendance(models.Model):
 
             for trx in transactions:
                 total_records += 1
-                # استبعاد أنواع غير ضرورية أو ناقصة
                 verify_type = (trx.get("VerifyType") or '').strip()
                 if verify_type and verify_type.lower() == 'interruption':
-                    # تخطّي سجلات الـ Interruption لأنها ليست بصمات موظف
                     continue
 
                 verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
@@ -169,15 +167,11 @@ class SSCAttendance(models.Model):
                     errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
                     continue
 
-                # تحويل VerifyTime إلى datetime عبر محاولات لعدة صيغ
+                # تحويل VerifyTime إلى datetime
                 verify_dt = None
-                # غالباً يأتي بتنسيق ISO مثل 2025-10-20T05:52:52
-                # نحاول fromisoformat أولاً ثم نجرّب فورماتات شائعة كـ fallback
                 try:
-                    # Python fromisoformat يتعامل مع 'YYYY-MM-DDTHH:MM:SS'
                     verify_dt = datetime.fromisoformat(verify_time_str)
                 except Exception:
-                    # fallback formats
                     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
                         try:
                             verify_dt = datetime.strptime(verify_time_str, fmt)
@@ -189,36 +183,38 @@ class SSCAttendance(models.Model):
                     errors.append(f"Unparseable VerifyTime: {verify_time_str}")
                     continue
 
+                # -------------------------
+                # هون حل مشكلة الفرق بالتوقيت
+                # BioCloud غالباً بالـ UTC، Odoo server محلي => نحول للـ Dubai local
+                # بدون هالخطوة رح يكون في فرق 4 ساعات
+                verify_dt = UTC.localize(verify_dt).astimezone(local_tz)
+                # -------------------------
+
                 verify_date = verify_dt.date()
                 badge_clean = self._normalize_badge(badge_number)
                 if not badge_clean:
                     errors.append(f"Empty badge after normalize: {badge_number}")
                     continue
 
-                # اجمع البصمات في المجموعة المناسبة
                 groups[(badge_clean, verify_date)].append((verify_dt, device_serial or '', trx))
 
             # 3) نجهز caches لتقليل الاستعلامات DB
             attendance_cache = {}
             employee_cache = {}
 
-            # 4) نُعالج كل مجموعة (كل موظف لكل يوم مرة واحدة)
+            # 4) نُعالج كل مجموعة
             for (badge_clean, v_date), events in groups.items():
-                # events: list of (dt, device, trx)
                 try:
-                    # ترتيب التايمستامب
                     events_sorted = sorted(events, key=lambda x: x[0])
                     first_dt = events_sorted[0][0]
                     last_dt = events_sorted[-1][0]
 
-                    # اختيار الجهاز الذي يعطي أكبر مدة span لنفس الموظف في ذلك اليوم
-                    # نحسب span لكل جهاز: max(dt) - min(dt) داخل هذا اليوم لذلك الجهاز
+                    # اختيار الجهاز الذي يعطي أكبر مدة span
                     device_events = defaultdict(list)
                     for dt, device, _ in events_sorted:
                         device_key = device or ''
                         device_events[device_key].append(dt)
 
-                    # حساب span لكل جهاز
                     device_spans = {}
                     for dev, dts in device_events.items():
                         if not dts:
@@ -226,19 +222,15 @@ class SSCAttendance(models.Model):
                         else:
                             device_spans[dev] = max(dts) - min(dts)
 
-                    # نختار الجهاز ذو أعلى span. لو كلهم صفر نأخذ الجهاز الأخير الموجود.
                     chosen_device = ''
                     if device_spans:
-                        # ترتيب بحسب span ثم بحسب آخر ظهور للتعادل
                         chosen_device = max(device_spans.items(), key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min))[0]
                     else:
                         chosen_device = ''
 
-                    # الآن نبحث عن employee عبر badge_clean
+                    # البحث عن الموظف عبر badge
                     employee = employee_cache.get(badge_clean)
                     if not employee:
-                        # استعلام واحد شامل قد يكون مكلفاً لو فيه آلاف، لكن نستخدم search محدد
-                        # نبحث بين الموظفين الذين لديهم قيمة attendance id
                         emp_found = None
                         for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
                             emp_badge = self._normalize_badge(emp.x_studio_attendance_id or '')
@@ -250,17 +242,15 @@ class SSCAttendance(models.Model):
                             employee = emp_found
 
                     if not employee:
-                        # لا يوجد موظف مطابق — نضيف لملاحظات ونكمل
                         errors.append(f"No employee match for badge {badge_clean} on {v_date}")
                         continue
                     matched_employee += 1
 
-                    # الحصول على attendance للسنة/الشهر/اليوم هذا (cache)
+                    # attendance record
                     attendance = attendance_cache.get(v_date)
                     if not attendance:
                         attendance = self.search([('date', '=', v_date)], limit=1)
                         if not attendance:
-                            # لو مش موجود ننشئ record جديد (منطقك موجود أصلاً)
                             attendance = self.create({
                                 'name': str(v_date),
                                 'date': v_date,
@@ -269,7 +259,6 @@ class SSCAttendance(models.Model):
                         attendance_cache[v_date] = attendance
                     matched_attendance += 1
 
-                    # الآن نجهز قيم السطر النهائي
                     line_vals = {
                         'employee_id': employee.id,
                         'attendance_id': employee.x_studio_attendance_id or '',
@@ -282,10 +271,8 @@ class SSCAttendance(models.Model):
                         'error_note': None
                     }
 
-                    # نتحقق لو في سطر موجود ونحدّثه أو نضيف جديد عبر write على line_ids
                     existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
                     if existing_line:
-                        # نكتب فقط الحقول الضرورية لتحديث البصمات والأجهزة
                         existing_line.write({
                             'first_punch': min(existing_line.first_punch or first_dt, first_dt),
                             'last_punch': max(existing_line.last_punch or last_dt, last_dt),
@@ -301,7 +288,7 @@ class SSCAttendance(models.Model):
                     errors.append(f"Error processing group {badge_clean} {v_date}: {sub_e}")
                     continue
 
-            # 5) بعد الانتهاء نعرض ملخص
+            # 5) ملخص بعد الانتهاء
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -316,7 +303,6 @@ class SSCAttendance(models.Model):
             }
 
         except Exception as e:
-            # في حال فشل شامل نعرض رسالة مفصلة
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -376,14 +362,11 @@ class SSCAttendanceLine(models.Model):
     @api.depends('first_punch', 'employee_id')
     def _compute_absent(self):
         for rec in self:
-            # إذا الموظف على إجازة => absent = False
             if rec.on_leave:
                 rec.absent = False
-            # الجمعة considered off day
             elif rec.external_id and rec.external_id.date and rec.external_id.date.weekday() == 4:
                 rec.absent = False
             else:
-                # الغياب يحسب فقط بناءً على وجود أول بصمة
                 rec.absent = not bool(rec.first_punch)
 
     @api.depends('employee_id')
