@@ -297,6 +297,35 @@ class SSCAttendance(models.Model):
                     'sticky': True,
                 }
             }
+        def transfer_to_daily_attendance(self):
+        for record in self:
+            for line in record.line_ids:
+                daily_attendance = self.env['x_daily_attendance'].search([
+                    ('x_name', '=', line.employee_id.name),
+                    ('x_date', '=', record.date)
+                ], limit=1)
+
+                if not daily_attendance:
+                    self.env['x_daily_attendance'].create({
+                        'x_name': line.employee_id.name,
+                        'x_date': record.date,
+                        'x_first_punch': line.first_punch,
+                        'x_last_punch': line.last_punch,
+                        'x_project': line.project_id.name if line.project_id else '',
+                    })
+                else:
+                    daily_attendance.write({
+                        'x_first_punch': line.first_punch,
+                        'x_last_punch': line.last_punch,
+                        'x_project': line.project_id.name if line.project_id else '',
+                    })
+        return {
+            'effect': {
+                'fadeout': 'slow',
+                'message': 'Transfer to Daily Attendance Completed Successfully!',
+                'type': 'rainbow_man',
+            }
+        }
 
 
 class SSCAttendanceLine(models.Model):
@@ -322,6 +351,7 @@ class SSCAttendanceLine(models.Model):
     # -------------------------
     # حساب الـ project بناء على punch_machine_id
     # -------------------------
+    
     @api.depends('punch_machine_id')
     def _compute_project(self):
         """
