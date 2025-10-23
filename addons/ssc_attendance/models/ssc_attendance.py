@@ -130,11 +130,6 @@ class SSCAttendance(models.Model):
 
             groups = defaultdict(list)
             Employee = self.env['x_employeeslist']
-            user_tz = self.env.context.get('tz') or (self.env.user.tz if self.env.user else None) or 'UTC'
-            try:
-                tz_obj = pytz.timezone(user_tz)
-            except Exception:
-                tz_obj = pytz.utc
 
             for trx in transactions:
                 total_records += 1
@@ -171,12 +166,12 @@ class SSCAttendance(models.Model):
                     except Exception:
                         verify_dt = pytz.utc.localize(verify_dt.replace(tzinfo=None))
 
-                try:
-                    local_dt = verify_dt.astimezone(tz_obj)
-                except Exception:
-                    local_dt = verify_dt.astimezone(pytz.utc)
+                # -------------------------
+                # خصم 4 ساعات مباشرة من الوقت
+                # -------------------------
+                verify_dt -= timedelta(hours=4)
 
-                verify_date = local_dt.date()
+                verify_date = verify_dt.date()
                 badge_clean = self._normalize_badge(badge_number)
                 if not badge_clean:
                     errors.append(f"Empty badge after normalize: {badge_number}")
@@ -303,6 +298,7 @@ class SSCAttendance(models.Model):
                 }
             }
 
+
 class SSCAttendanceLine(models.Model):
     _name = "ssc.attendance.line"
     _description = "Attendance Line"
@@ -348,7 +344,6 @@ class SSCAttendanceLine(models.Model):
                     proj = Project.search([('x_name', '=', target_name)], limit=1)
                     rec.project_id = proj.id if proj else False
                     if not proj:
-                        # لو ما لقى المشروع نحط ملاحظة خطأ صغيرة (ما توقف التنفيذ)
                         rec.error_note = (rec.error_note or '') + f"\nProject not found for name: {target_name}"
                 else:
                     rec.project_id = False
@@ -383,8 +378,6 @@ class SSCAttendanceLine(models.Model):
     @api.depends('first_punch', 'employee_id')
     def _compute_absent(self):
         for rec in self:
-            # بالعربي: لو الموظف على اجازة => absent False
-            # أو لو اليوم جمعة => False
             if rec.on_leave:
                 rec.absent = False
             elif rec.external_id and rec.external_id.date and rec.external_id.date.weekday() == 4:
