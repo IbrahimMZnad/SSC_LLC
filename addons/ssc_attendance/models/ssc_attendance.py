@@ -116,6 +116,8 @@ class SSCAttendance(models.Model):
         matched_employee = 0
         errors = []
 
+        time_correction_hours = 4  # فرق 4 ساعات
+
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             if response.status_code != 200:
@@ -170,6 +172,11 @@ class SSCAttendance(models.Model):
                         verify_dt = verify_dt.astimezone(pytz.utc)
                     except Exception:
                         verify_dt = pytz.utc.localize(verify_dt.replace(tzinfo=None))
+
+                # -------------------------
+                # تصحيح فرق 4 ساعات
+                # -------------------------
+                verify_dt = verify_dt + timedelta(hours=time_correction_hours)
 
                 try:
                     local_dt = verify_dt.astimezone(tz_obj)
