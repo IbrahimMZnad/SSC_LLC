@@ -6,6 +6,7 @@ import re
 from collections import defaultdict
 import pytz
 
+
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
     _description = "SSC Attendance"
@@ -33,8 +34,6 @@ class SSCAttendance(models.Model):
     @api.depends('date')
     def _compute_day_name(self):
         for rec in self:
-            # بالعربي (عامي): بحسب اسم اليوم من التاريخ
-            # EN: compute day name from date
             rec.day_name = rec.date.strftime('%A') if rec.date else ''
 
     # -------------------------
@@ -89,31 +88,21 @@ class SSCAttendance(models.Model):
             self.write({'line_ids': lines})
 
     # -------------------------
-    # مساعدة: تنظيف badge (إزالة أي رموز غير أرقام/حروف) / Normalize badge
+    # Normalize badge number
     # -------------------------
     def _normalize_badge(self, s):
         if not s:
             return ''
-        # keep only alphanumeric characters, uppercase
         return re.sub(r'[^A-Za-z0-9]', '', str(s)).upper()
 
     # -------------------------
-    # دالة fetch من BioCloud مع handling مضبوط للـ timezone
+    # Fetch BioCloud Data
     # -------------------------
     def fetch_bioclock_data(self):
-        """
-        الخوارزمية العامة (ملخّص):
-        1) نجيب كل transactions من API.
-        2) نتجاهل سجلات Interruption أو الناقصة.
-        3) نحوّل كل VerifyTime لِـ timezone-aware datetime (نفترض UTC لو ما في tz).
-        4) نجمّع البصمات حسب (badge_clean, local_date) — local_date بحساب tz المستخدم.
-        5) نحسب first/last ونختار الجهاز ذو أكبر span، ثم نحدّث أو نضيف سطر attendance.line.
-        6) نرجع ملخّص.
-        """
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"token": token, "Content-Type": "application/json"}
-        # الفترة: آخر 24 ساعة — هذا منطقك الأصلي
+
         end_date = datetime.now(pytz.utc)
         start_date = end_date - timedelta(days=1)
         payload = {
@@ -134,15 +123,13 @@ class SSCAttendance(models.Model):
             data = response.json()
             if "result" in data and data["result"] not in ("Success", "OK"):
                 raise Exception(data.get("message", "Unexpected response from BioCloud"))
+
             transactions = data.get("message") or data.get("data") or []
             if transactions is None:
                 transactions = []
 
-            # 2) نجمع البصمات حسب badge_clean + verify_date (local date)
-            groups = defaultdict(list)  # key = (badge_clean, date), value = list of (dt_utc, device, raw_trx)
+            groups = defaultdict(list)
             Employee = self.env['x_employeeslist']
-
-            # حدد tz المستخدم (fallback لـ UTC) — حتى نحسب التاريخ المحلي بطريقة صحيحة
             user_tz = self.env.context.get('tz') or (self.env.user.tz if self.env.user else None) or 'UTC'
             try:
                 tz_obj = pytz.timezone(user_tz)
@@ -151,11 +138,10 @@ class SSCAttendance(models.Model):
 
             for trx in transactions:
                 total_records += 1
-                # استبعاد أنواع غير ضرورية أو ناقصة
                 verify_type = (trx.get("VerifyType") or '').strip()
                 if verify_type and verify_type.lower() == 'interruption':
-                    # تخطّي سجلات الانقطاع
                     continue
+
                 verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
                 badge_number = trx.get("BadgeNumber")
                 device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
@@ -164,12 +150,9 @@ class SSCAttendance(models.Model):
                     continue
 
                 verify_dt = None
-                # حاول parse بعدة طرق
                 try:
-                    # محاولة fromisoformat أولاً (قد يرجع naive أو مع tz)
                     verify_dt = datetime.fromisoformat(verify_time_str)
                 except Exception:
-                    # fallback formats
                     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
                         try:
                             verify_dt = datetime.strptime(verify_time_str, fmt)
@@ -180,19 +163,14 @@ class SSCAttendance(models.Model):
                     errors.append(f"Unparseable VerifyTime: {verify_time_str}")
                     continue
 
-                # --- IMPORTANT: Normalize timezone handling ---
-                # If incoming verify_dt has no tzinfo, assume it's UTC (most BioCloud APIs return UTC timestamps).
-                # Make it timezone-aware in UTC, then convert to user's timezone to get the local date for grouping.
                 if verify_dt.tzinfo is None:
                     verify_dt = pytz.utc.localize(verify_dt)
                 else:
-                    # ensure it's normalized to UTC-aware
                     try:
                         verify_dt = verify_dt.astimezone(pytz.utc)
                     except Exception:
                         verify_dt = pytz.utc.localize(verify_dt.replace(tzinfo=None))
 
-                # compute local datetime in user's tz for grouping by date
                 try:
                     local_dt = verify_dt.astimezone(tz_obj)
                 except Exception:
@@ -204,37 +182,36 @@ class SSCAttendance(models.Model):
                     errors.append(f"Empty badge after normalize: {badge_number}")
                     continue
 
-                # append the UTC-aware datetime (verify_dt) and device
                 groups[(badge_clean, verify_date)].append((verify_dt, device_serial or '', trx))
 
-            # caches لتقليل الاستعلامات
             attendance_cache = {}
             employee_cache = {}
 
-            # 4) نُعالج كل مجموعة
             for (badge_clean, v_date), events in groups.items():
                 try:
-                    # ترتيب التايمستامب
+                    # ترتيب الأحداث حسب الوقت
                     events_sorted = sorted(events, key=lambda x: x[0])
-                    first_dt_utc = events_sorted[0][0]   # aware UTC
-                    last_dt_utc = events_sorted[-1][0]   # aware UTC
 
-                    # اختيار الجهاز الذي يعطي أكبر مدة span لنفس الموظف في ذلك اليوم
+                    # حل المشكلة هنا 👇
+                    if len(events_sorted) == 1:
+                        first_dt_utc = last_dt_utc = events_sorted[0][0]
+                    else:
+                        first_dt_utc = events_sorted[0][0]
+                        last_dt_utc = events_sorted[-1][0]
+                    # 👆 الآن يضمن إن الأولى والأخيرة مختلفتين إذا في أكثر من بصمة
+
                     device_events = defaultdict(list)
                     for dt, device, _ in events_sorted:
                         device_key = device or ''
                         device_events[device_key].append(dt)
-
                     device_spans = {}
                     for dev, dts in device_events.items():
                         if not dts:
                             device_spans[dev] = timedelta(0)
                         else:
                             device_spans[dev] = max(dts) - min(dts)
-
                     chosen_device = ''
                     if device_spans:
-                        # ترتيب بحسب span ثم بحسب آخر ظهور للتعادل
                         chosen_device = max(
                             device_spans.items(),
                             key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min)
@@ -242,11 +219,9 @@ class SSCAttendance(models.Model):
                     else:
                         chosen_device = ''
 
-                    # الآن نبحث عن employee عبر badge_clean (cache)
                     employee = employee_cache.get(badge_clean)
                     if not employee:
                         emp_found = None
-                        # البحث بمطابقة الحقل x_studio_attendance_id بعد normalize
                         for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
                             emp_badge = self._normalize_badge(emp.x_studio_attendance_id or '')
                             if emp_badge == badge_clean:
@@ -255,13 +230,11 @@ class SSCAttendance(models.Model):
                         if emp_found:
                             employee_cache[badge_clean] = emp_found
                             employee = emp_found
-
                     if not employee:
                         errors.append(f"No employee match for badge {badge_clean} on {v_date}")
                         continue
                     matched_employee += 1
 
-                    # الحصول على attendance للسنة/الشهر/اليوم هذا (cache)
                     attendance = attendance_cache.get(v_date)
                     if not attendance:
                         attendance = self.search([('date', '=', v_date)], limit=1)
@@ -272,11 +245,8 @@ class SSCAttendance(models.Model):
                                 'type': 'Off Day' if v_date.weekday() == 4 else 'Regular Day'
                             })
                         attendance_cache[v_date] = attendance
-                        matched_attendance += 1
+                    matched_attendance += 1
 
-                    # نجهز قيم السطر النهائي
-                    # IMPORTANT: fields.Datetime expects string in UTC (to store correctly).
-                    # نستخدم fields.Datetime.to_string لتأمين الشكل المناسب
                     first_punch_str = fields.Datetime.to_string(first_dt_utc)
                     last_punch_str = fields.Datetime.to_string(last_dt_utc)
 
@@ -294,7 +264,6 @@ class SSCAttendance(models.Model):
 
                     existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
                     if existing_line:
-                        # حدث القيم الأساسية بس بدون تغيير الباقي
                         existing_line.write({
                             'first_punch': min(existing_line.first_punch or first_punch_str, first_punch_str),
                             'last_punch': max(existing_line.last_punch or last_punch_str, last_punch_str),
@@ -309,7 +278,6 @@ class SSCAttendance(models.Model):
                     errors.append(f"Error processing group {badge_clean} {v_date}: {sub_e}")
                     continue
 
-            # ملخّص
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
