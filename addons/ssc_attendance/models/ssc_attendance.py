@@ -6,11 +6,9 @@ import re
 from collections import defaultdict
 import pytz
 
-
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
     _description = "SSC Attendance"
-
     _sql_constraints = [
         ('unique_date', 'unique(date)', 'Attendance record already exists for this date!')
     ]
@@ -102,20 +100,17 @@ class SSCAttendance(models.Model):
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"token": token, "Content-Type": "application/json"}
-
         end_date = datetime.now(pytz.utc)
         start_date = end_date - timedelta(days=1)
         payload = {
             "StartDate": start_date.strftime("%Y-%m-%d 00:00:00"),
             "EndDate": end_date.strftime("%Y-%m-%d 23:59:59")
         }
-
         synced_count = 0
         total_records = 0
         matched_attendance = 0
         matched_employee = 0
         errors = []
-
         try:
             response = requests.post(url, headers=headers, json=payload, timeout=30)
             if response.status_code != 200:
@@ -123,27 +118,22 @@ class SSCAttendance(models.Model):
             data = response.json()
             if "result" in data and data["result"] not in ("Success", "OK"):
                 raise Exception(data.get("message", "Unexpected response from BioCloud"))
-
             transactions = data.get("message") or data.get("data") or []
             if transactions is None:
                 transactions = []
-
             groups = defaultdict(list)
             Employee = self.env['x_employeeslist']
-
             for trx in transactions:
                 total_records += 1
                 verify_type = (trx.get("VerifyType") or '').strip()
                 if verify_type and verify_type.lower() == 'interruption':
                     continue
-
                 verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
                 badge_number = trx.get("BadgeNumber")
                 device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
                 if not (verify_time_str and badge_number):
                     errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
                     continue
-
                 verify_dt = None
                 try:
                     verify_dt = datetime.fromisoformat(verify_time_str)
@@ -157,7 +147,6 @@ class SSCAttendance(models.Model):
                 if not verify_dt:
                     errors.append(f"Unparseable VerifyTime: {verify_time_str}")
                     continue
-
                 if verify_dt.tzinfo is None:
                     verify_dt = pytz.utc.localize(verify_dt)
                 else:
@@ -170,18 +159,15 @@ class SSCAttendance(models.Model):
                 # خصم 4 ساعات مباشرة من الوقت
                 # -------------------------
                 verify_dt -= timedelta(hours=4)
-
                 verify_date = verify_dt.date()
                 badge_clean = self._normalize_badge(badge_number)
                 if not badge_clean:
                     errors.append(f"Empty badge after normalize: {badge_number}")
                     continue
-
                 groups[(badge_clean, verify_date)].append((verify_dt, device_serial or '', trx))
 
             attendance_cache = {}
             employee_cache = {}
-
             for (badge_clean, v_date), events in groups.items():
                 try:
                     # ترتيب الأحداث حسب الوقت
@@ -199,12 +185,14 @@ class SSCAttendance(models.Model):
                     for dt, device, _ in events_sorted:
                         device_key = device or ''
                         device_events[device_key].append(dt)
+
                     device_spans = {}
                     for dev, dts in device_events.items():
                         if not dts:
                             device_spans[dev] = timedelta(0)
                         else:
                             device_spans[dev] = max(dts) - min(dts)
+
                     chosen_device = ''
                     if device_spans:
                         chosen_device = max(
@@ -225,6 +213,7 @@ class SSCAttendance(models.Model):
                         if emp_found:
                             employee_cache[badge_clean] = emp_found
                             employee = emp_found
+
                     if not employee:
                         errors.append(f"No employee match for badge {badge_clean} on {v_date}")
                         continue
@@ -244,7 +233,6 @@ class SSCAttendance(models.Model):
 
                     first_punch_str = fields.Datetime.to_string(first_dt_utc)
                     last_punch_str = fields.Datetime.to_string(last_dt_utc)
-
                     line_vals = {
                         'employee_id': employee.id,
                         'attendance_id': employee.x_studio_attendance_id or '',
@@ -256,7 +244,6 @@ class SSCAttendance(models.Model):
                         'punch_machine_id': chosen_device or '',
                         'error_note': None
                     }
-
                     existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
                     if existing_line:
                         existing_line.write({
@@ -268,7 +255,6 @@ class SSCAttendance(models.Model):
                     else:
                         attendance.write({'line_ids': [(0, 0, line_vals)]})
                     synced_count += 1
-
                 except Exception as sub_e:
                     errors.append(f"Error processing group {badge_clean} {v_date}: {sub_e}")
                     continue
@@ -285,7 +271,6 @@ class SSCAttendance(models.Model):
                     'sticky': False,
                 }
             }
-
         except Exception as e:
             return {
                 'type': 'ir.actions.client',
@@ -297,35 +282,6 @@ class SSCAttendance(models.Model):
                     'sticky': True,
                 }
             }
-        def transfer_to_daily_attendance(self):
-        for record in self:
-            for line in record.line_ids:
-                daily_attendance = self.env['x_daily_attendance'].search([
-                    ('x_name', '=', line.employee_id.name),
-                    ('x_date', '=', record.date)
-                ], limit=1)
-
-                if not daily_attendance:
-                    self.env['x_daily_attendance'].create({
-                        'x_name': line.employee_id.name,
-                        'x_date': record.date,
-                        'x_first_punch': line.first_punch,
-                        'x_last_punch': line.last_punch,
-                        'x_project': line.project_id.name if line.project_id else '',
-                    })
-                else:
-                    daily_attendance.write({
-                        'x_first_punch': line.first_punch,
-                        'x_last_punch': line.last_punch,
-                        'x_project': line.project_id.name if line.project_id else '',
-                    })
-        return {
-            'effect': {
-                'fadeout': 'slow',
-                'message': 'Transfer to Daily Attendance Completed Successfully!',
-                'type': 'rainbow_man',
-            }
-        }
 
 
 class SSCAttendanceLine(models.Model):
@@ -351,11 +307,9 @@ class SSCAttendanceLine(models.Model):
     # -------------------------
     # حساب الـ project بناء على punch_machine_id
     # -------------------------
-    
     @api.depends('punch_machine_id')
     def _compute_project(self):
-        """
-        خريطة الأجهزة للمشاريع:
+        """ خريطة الأجهزة للمشاريع:
         - VDE2252100257 أو VDE2252100409 => "47 G+1 Villa Arjan (Townhouses) - 6727777"
         - VDE2252100345 أو VDE2252100359 => "Al Khan G + 15 - 211"
         بنبحث داخل model x_projects_list على السجل اللي x_name == الاسم ثم نربطه.
