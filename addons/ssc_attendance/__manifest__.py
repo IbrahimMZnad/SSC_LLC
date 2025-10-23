@@ -9,7 +9,7 @@
         'views/ssc_attendance_views.xml',
         'views/ssc_attendance_menu.xml',
         'data/ssc_attendance_cron.xml',
-        'data/ssc_attendance_transfer_cron.xml',],
+    ],
     'installable': True,
     'application': True,
 }
