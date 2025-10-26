@@ -5,6 +5,12 @@ import requests
 import re
 from collections import defaultdict
 import pytz
+import logging
+
+_logger = logging.getLogger(__name__)
+
+SERVER_TZ = pytz.timezone('Asia/Dubai')
+
 
 class SSCAttendance(models.Model):
     _name = "ssc.attendance"
@@ -97,14 +103,22 @@ class SSCAttendance(models.Model):
     # Fetch BioCloud Data
     # -------------------------
     def fetch_bioclock_data(self):
+        """
+        Fetch transactions from BioCloud and populate ssc.attendance / ssc.attendance.line
+        - Timestamps from API:
+            * If tz-aware => respect tz
+            * If naive => assume SERVER_TZ (Asia/Dubai)
+        - Grouping is done by date in SERVER_TZ (so events grouped per Dubai date)
+        - Stored datetimes are converted to UTC strings (DB standard)
+        """
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"token": token, "Content-Type": "application/json"}
-        end_date = datetime.now(pytz.utc)
-        start_date = end_date - timedelta(days=1)
+        end_dt_utc = datetime.now(pytz.utc)
+        start_dt_utc = end_dt_utc - timedelta(days=1)
         payload = {
-            "StartDate": start_date.strftime("%Y-%m-%d 00:00:00"),
-            "EndDate": end_date.strftime("%Y-%m-%d 23:59:59")
+            "StartDate": start_dt_utc.strftime("%Y-%m-%d 00:00:00"),
+            "EndDate": end_dt_utc.strftime("%Y-%m-%d 23:59:59")
         }
         synced_count = 0
         total_records = 0
@@ -123,6 +137,12 @@ class SSCAttendance(models.Model):
                 transactions = []
             groups = defaultdict(list)
             Employee = self.env['x_employeeslist']
+
+            # Build badge map once for performance
+            badge_map = {}
+            for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
+                badge_map[self._normalize_badge(emp.x_studio_attendance_id or '')] = emp
+
             for trx in transactions:
                 total_records += 1
                 verify_type = (trx.get("VerifyType") or '').strip()
@@ -134,8 +154,11 @@ class SSCAttendance(models.Model):
                 if not (verify_time_str and badge_number):
                     errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
                     continue
+
+                # parse verify_time_str into a datetime
                 verify_dt = None
                 try:
+                    # Try ISO first (may contain timezone)
                     verify_dt = datetime.fromisoformat(verify_time_str)
                 except Exception:
                     for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
@@ -147,39 +170,54 @@ class SSCAttendance(models.Model):
                 if not verify_dt:
                     errors.append(f"Unparseable VerifyTime: {verify_time_str}")
                     continue
+
+                # If naive, assume SERVER_TZ (Asia/Dubai); if tz-aware, respect it
                 if verify_dt.tzinfo is None:
-                    verify_dt = pytz.utc.localize(verify_dt)
-                else:
                     try:
-                        verify_dt = verify_dt.astimezone(pytz.utc)
+                        verify_dt = SERVER_TZ.localize(verify_dt)
                     except Exception:
+                        verify_dt = pytz.utc.localize(verify_dt)
+                else:
+                    # ensure it's a pytz timezone-aware datetime
+                    try:
+                        verify_dt = verify_dt.astimezone(pytz.utc).astimezone(verify_dt.tzinfo)
+                    except Exception:
+                        # fallback: convert to UTC then localize
                         verify_dt = pytz.utc.localize(verify_dt.replace(tzinfo=None))
 
-                # -------------------------
-                # خصم 4 ساعات مباشرة من الوقت
-                # -------------------------
-                verify_dt -= timedelta(hours=4)
-                verify_date = verify_dt.date()
+                # compute server-local date (for grouping by day in Asia/Dubai)
+                try:
+                    verify_dt_server = verify_dt.astimezone(SERVER_TZ)
+                except Exception:
+                    verify_dt_server = SERVER_TZ.normalize(verify_dt)
+
+                verify_date = verify_dt_server.date()
+
+                # convert to UTC for storage and compare operations
+                try:
+                    verify_dt_utc = verify_dt.astimezone(pytz.utc)
+                except Exception:
+                    verify_dt_utc = pytz.utc.localize(verify_dt.replace(tzinfo=None))
+
                 badge_clean = self._normalize_badge(badge_number)
                 if not badge_clean:
                     errors.append(f"Empty badge after normalize: {badge_number}")
                     continue
-                groups[(badge_clean, verify_date)].append((verify_dt, device_serial or '', trx))
+                # store UTC datetime in events but grouped by server date
+                groups[(badge_clean, verify_date)].append((verify_dt_utc, device_serial or '', trx))
 
             attendance_cache = {}
-            employee_cache = {}
+            employee_cache = {}  # still keep a small cache
             for (badge_clean, v_date), events in groups.items():
                 try:
-                    # ترتيب الأحداث حسب الوقت
+                    # ترتيب الأحداث حسب الوقت (UTC stored)
                     events_sorted = sorted(events, key=lambda x: x[0])
 
-                    # حل المشكلة هنا 👇
                     if len(events_sorted) == 1:
                         first_dt_utc = last_dt_utc = events_sorted[0][0]
                     else:
                         first_dt_utc = events_sorted[0][0]
                         last_dt_utc = events_sorted[-1][0]
-                    # 👆 الآن يضمن إن الأولى والأخيرة مختلفتين إذا في أكثر من بصمة
 
                     device_events = defaultdict(list)
                     for dt, device, _ in events_sorted:
@@ -202,14 +240,10 @@ class SSCAttendance(models.Model):
                     else:
                         chosen_device = ''
 
+                    # lookup employee via badge_map (fast)
                     employee = employee_cache.get(badge_clean)
                     if not employee:
-                        emp_found = None
-                        for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
-                            emp_badge = self._normalize_badge(emp.x_studio_attendance_id or '')
-                            if emp_badge == badge_clean:
-                                emp_found = emp
-                                break
+                        emp_found = badge_map.get(badge_clean)
                         if emp_found:
                             employee_cache[badge_clean] = emp_found
                             employee = emp_found
@@ -231,6 +265,7 @@ class SSCAttendance(models.Model):
                         attendance_cache[v_date] = attendance
                     matched_attendance += 1
 
+                    # store as UTC strings (DB standard)
                     first_punch_str = fields.Datetime.to_string(first_dt_utc)
                     last_punch_str = fields.Datetime.to_string(last_dt_utc)
                     line_vals = {
@@ -246,9 +281,23 @@ class SSCAttendance(models.Model):
                     }
                     existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
                     if existing_line:
+                        # Normalize existing datetimes to compare as datetimes
+                        try:
+                            existing_first_dt = fields.Datetime.from_string(existing_line.first_punch) if existing_line.first_punch else None
+                        except Exception:
+                            existing_first_dt = None
+                        try:
+                            existing_last_dt = fields.Datetime.from_string(existing_line.last_punch) if existing_line.last_punch else None
+                        except Exception:
+                            existing_last_dt = None
+
+                        # Use UTC datetimes first_dt_utc/last_dt_utc for comparison
+                        chosen_first_dt = min([d for d in (existing_first_dt, first_dt_utc) if d is not None])
+                        chosen_last_dt = max([d for d in (existing_last_dt, last_dt_utc) if d is not None])
+
                         existing_line.write({
-                            'first_punch': min(existing_line.first_punch or first_punch_str, first_punch_str),
-                            'last_punch': max(existing_line.last_punch or last_punch_str, last_punch_str),
+                            'first_punch': fields.Datetime.to_string(chosen_first_dt) if chosen_first_dt else False,
+                            'last_punch': fields.Datetime.to_string(chosen_last_dt) if chosen_last_dt else False,
                             'punch_machine_id': chosen_device or (existing_line.punch_machine_id or ''),
                             'error_note': None
                         })
@@ -257,8 +306,14 @@ class SSCAttendance(models.Model):
                     synced_count += 1
                 except Exception as sub_e:
                     errors.append(f"Error processing group {badge_clean} {v_date}: {sub_e}")
+                    _logger.exception("Error processing group %s %s: %s", badge_clean, v_date, sub_e)
                     continue
 
+            # Log the results (cron won't show ir.actions.client)
+            _logger.info('BioCloud Sync: %s records synced. Total received: %s Matched attendance days: %s Matched employees: %s Errors: %s',
+                         synced_count, total_records, matched_attendance, matched_employee, len(errors))
+
+            # When called from UI (button) return notification; when cron, Odoo ignores it
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -272,6 +327,7 @@ class SSCAttendance(models.Model):
                 }
             }
         except Exception as e:
+            _logger.exception("Sync Error: %s", e)
             return {
                 'type': 'ir.actions.client',
                 'tag': 'display_notification',
@@ -282,6 +338,73 @@ class SSCAttendance(models.Model):
                     'sticky': True,
                 }
             }
+
+    # -------------------------
+    # Transfer to x_daily_attendance
+    # -------------------------
+    def transfer_to_x_daily_attendance(self):
+        """
+        Transfer lines from ssc.attendance -> x_daily_attendance according to:
+        - find x_daily_attendance where x_studio_todays_date == attendance.date
+        - and company match: company_id in line == x_studio_company in x_daily_attendance
+        - if type == 'Regular Day' -> transfer to x_studio_attendance_sheet
+            * match/compare x_studio_id with attendance_id
+            * set x_studio_absent, x_studio_project, x_studio_overtime_hrs = total_ot
+        - if type == 'Off Day' -> transfer to x_studio_off_days_attendance_sheet
+            * match x_studio_id with attendance_id
+            * set x_studio_project, x_studio_overtime_hrs = total_time + total_ot
+        """
+        Daily = self.env['x_daily_attendance']
+        for attendance in self:
+            for line in attendance.line_ids:
+                # skip lines with no company (cannot find matching parent)
+                if not line.company_id:
+                    continue
+                parent = Daily.search([
+                    ('x_studio_todays_date', '=', attendance.date),
+                    ('x_studio_company', '=', line.company_id.id)
+                ], limit=1)
+                if not parent:
+                    # no matching x_daily_attendance for this date/company
+                    continue
+
+                # Depending on day type, transfer to appropriate one2many
+                if attendance.type == 'Regular Day':
+                    # try find existing sheet line with same x_studio_id
+                    existing_sheet = parent.x_studio_attendance_sheet.filtered(lambda l: l.x_studio_id == (line.attendance_id or ''))
+                    vals = {
+                        'x_studio_id': line.attendance_id or '',
+                        'x_studio_absent': bool(line.absent),
+                        'x_studio_project': line.project_id.id if line.project_id else False,
+                        'x_studio_overtime_hrs': line.total_ot if line.total_ot else 0.0,
+                    }
+                    if existing_sheet:
+                        existing_sheet.write(vals)
+                    else:
+                        parent.write({'x_studio_attendance_sheet': [(0, 0, vals)]})
+
+                elif attendance.type == 'Off Day':
+                    existing_sheet = parent.x_studio_off_days_attendance_sheet.filtered(lambda l: l.x_studio_id == (line.attendance_id or ''))
+                    vals = {
+                        'x_studio_id': line.attendance_id or '',
+                        'x_studio_project': line.project_id.id if line.project_id else False,
+                        'x_studio_overtime_hrs': (line.total_time + line.total_ot) if (line.total_time or line.total_ot) else 0.0,
+                    }
+                    if existing_sheet:
+                        existing_sheet.write(vals)
+                    else:
+                        parent.write({'x_studio_off_days_attendance_sheet': [(0, 0, vals)]})
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Transfer Finished',
+                'message': 'Transfer to x_daily_attendance completed.',
+                'type': 'success',
+                'sticky': False,
+            }
+        }
 
 
 class SSCAttendanceLine(models.Model):
@@ -343,19 +466,22 @@ class SSCAttendanceLine(models.Model):
     def _compute_total_time(self):
         for rec in self:
             if rec.first_punch and rec.last_punch:
+                # delta computed from stored UTC datetimes -> returns timedelta
                 delta = rec.last_punch - rec.first_punch
                 hours = delta.total_seconds() / 3600.0
+                # خصم ساعة استراحة (لو المدة أكبر من ساعة)
+                if hours > 1.0:
+                    hours = hours - 1.0
+                # cap to 8 hours
                 rec.total_time = hours if hours <= 8 else 8.0
             else:
                 rec.total_time = 0.0
 
-    @api.depends('first_punch', 'last_punch')
+    @api.depends('total_time')
     def _compute_total_ot(self):
         for rec in self:
-            if rec.first_punch and rec.last_punch:
-                delta = rec.last_punch - rec.first_punch
-                hours = delta.total_seconds() / 3600.0
-                rec.total_ot = hours - 8.0 if hours > 8.0 else 0.0
+            if rec.total_time:
+                rec.total_ot = rec.total_time - 8.0 if rec.total_time > 8.0 else 0.0
             else:
                 rec.total_ot = 0.0
 
