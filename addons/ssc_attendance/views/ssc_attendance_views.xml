@@ -40,6 +40,11 @@
                                 type="object"
                                 class="btn-primary"
                                 icon="fa-refresh"/>
+                        <button name="transfer_to_x_daily_attendance"
+                                string="➡️ Transfer to x_daily_attendance"
+                                type="object"
+                                class="btn-secondary"
+                                icon="fa-arrow-right"/>
                     </group>
                 </sheet>
             </form>
