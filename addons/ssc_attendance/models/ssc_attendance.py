@@ -425,21 +425,21 @@ class SSCAttendanceLine(models.Model):
             rec.company_id = rec.employee_id.x_studio_company.id if rec.employee_id and getattr(rec.employee_id, 'x_studio_company', False) else False
 
     @api.depends('first_punch', 'last_punch')
-def _compute_total_time(self):
-    for rec in self:
-        if rec.first_punch and rec.last_punch:
-            # احسب الفرق بين وقت الدخول والخروج
-            delta = rec.last_punch - rec.first_punch
-            hours = delta.total_seconds() / 3600.0
+    def _compute_total_time(self):
+        for rec in self:
+            if rec.first_punch and rec.last_punch:
+                # احسب الفرق بين وقت الدخول والخروج
+                delta = rec.last_punch - rec.first_punch
+                hours = delta.total_seconds() / 3600.0
 
-            # إذا الخروج بعد الساعة 2 ظهرًا خصم ساعة استراحة
-            if rec.last_punch.hour >= 14:
-                hours -= 1.0
+                # إذا الخروج بعد الساعة 2 ظهرًا خصم ساعة استراحة
+                if rec.last_punch.hour >= 14:
+                    hours -= 1.0
 
-            # إذا كانت الساعات أكثر من 8، نخزن فقط 8 في total_time
-            rec.total_time = 8.0 if hours > 8.0 else hours
-        else:
-            rec.total_time = 0.0
+                # إذا كانت الساعات أكثر من 8، نخزن فقط 8 في total_time
+                rec.total_time = 8.0 if hours > 8.0 else hours
+            else:
+                rec.total_time = 0.0
 
 
     @api.depends('first_punch', 'last_punch')
