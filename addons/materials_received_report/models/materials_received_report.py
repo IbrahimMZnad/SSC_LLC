@@ -38,11 +38,11 @@ class MaterialsReceivedReport(models.Model):
                 rec.receipt_ids = [(5, 0, 0)]
                 continue
 
-            # احسب أول وآخر يوم من الشهر
+            # احسب أول وآخر يوم من الشهر وحولهم لـ date
             month_int = int(rec.month)
             year_int = rec.year
-            first_day = datetime(year_int, month_int, 1)
-            last_day = datetime(year_int, month_int, calendar.monthrange(year_int, month_int)[1])
+            first_day = datetime(year_int, month_int, 1).date()
+            last_day = datetime(year_int, month_int, calendar.monthrange(year_int, month_int)[1]).date()
 
             matched_receipts = self.env['x_material_receipt'].search([
                 ('x_studio_company', '=', rec.company_id.id),
@@ -54,8 +54,8 @@ class MaterialsReceivedReport(models.Model):
                 for line in r.x_studio_items_ordered:
                     if not line.x_studio_date:
                         continue
-                    date = fields.Date.to_date(line.x_studio_date)
-                    if first_day <= date <= last_day:
+                    date_value = fields.Date.to_date(line.x_studio_date)
+                    if first_day <= date_value <= last_day:
                         valid_ids.append(r.id)
                         break  # ما بدنا نكرر نفس السجل أكثر من مرة
 
