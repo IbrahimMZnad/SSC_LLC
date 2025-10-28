@@ -7,7 +7,6 @@
     'summary': 'Generate monthly and daily materials received reports by project and company',
     'depends': ['base'],
     'data': [
-        'security/ir.model.access.csv',
         'views/materials_received_report_views.xml',
     ],
     'application': True,
