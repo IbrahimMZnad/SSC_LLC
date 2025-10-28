@@ -1,0 +1,55 @@
+<odoo>
+    <record id="view_materials_received_report_tree" model="ir.ui.view">
+        <field name="name">materials.received.report.tree</field>
+        <field name="model">materials.received.report</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="report_type"/>
+                <field name="month"/>
+                <field name="year"/>
+                <field name="company_id"/>
+                <field name="project_ids"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_materials_received_report_form" model="ir.ui.view">
+        <field name="name">materials.received.report.form</field>
+        <field name="model">materials.received.report</field>
+        <field name="arch" type="xml">
+            <form string="Materials Received Report">
+                <sheet>
+                    <group>
+                        <field name="name" readonly="1"/>
+                        <field name="report_type"/>
+                        <field name="month"/>
+                        <field name="year"/>
+                        <field name="company_id"/>
+                        <field name="project_ids" widget="many2many_tags"/>
+                    </group>
+
+                    <group string="Results">
+                        <field name="receipt_ids" widget="many2many_tags"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_materials_received_report" model="ir.actions.act_window">
+        <field name="name">Materials Received Report</field>
+        <field name="res_model">materials.received.report</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_materials_received_report_root"
+              name="Store Reports"
+              sequence="10"/>
+
+    <menuitem id="menu_materials_received_report"
+              name="Materials Received Report"
+              parent="menu_materials_received_report_root"
+              action="action_materials_received_report"
+              sequence="20"/>
+</odoo>
