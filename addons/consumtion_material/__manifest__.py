@@ -1,19 +1,14 @@
 # -*- coding: utf-8 -*-
 {
-    'name': 'Consumption Material',
-    'version': '1.0',
-    'category': 'Reports',
-    'summary': 'Consumption Material Report Module',
-    'description': """
-Generate and filter consumed materials based on company, project, date range, and items.
-""",
-    'author': 'Ibrahim Alznad',
-    'depends': ['base'],
+    'name': "Consumtion Material",
+    'version': "1.0",
+    'category': "Custom",
+    'summary': "Report of all consumed materials",
+    'description': "Module to generate Consumption Material report based on filters",
+    'depends': ['base', 'x_transaction', 'x_projects_list', 'x_all_items_list'],
     'data': [
         'views/consumtion_material_views.xml',
     ],
     'installable': True,
     'application': True,
-    'auto_install': False,
-    'license': 'LGPL-3',
 }
