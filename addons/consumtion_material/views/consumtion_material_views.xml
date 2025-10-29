@@ -44,14 +44,14 @@
                     <notebook>
                         <page string="Results">
                             <field name="all_material_consumed" nolabel="1">
-                                <list string="Consumed Transactions" editable="false">
+                                <tree string="Consumed Transactions" editable="false">
                                     <field name="name"/>
                                     <field name="x_studio_project"/>
                                     <field name="x_studio_company"/>
                                     <field name="x_studio_date_2"/>
                                     <field name="x_studio_item_1"/>
                                     <field name="x_studio_quantity"/>
-                                </list>
+                                </tree>
                             </field>
                         </page>
                     </notebook>
