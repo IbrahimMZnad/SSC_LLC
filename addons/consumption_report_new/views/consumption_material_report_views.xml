@@ -12,7 +12,6 @@
                 <field name="year"/>
                 <field name="company_id"/>
                 <field name="project_ids"/>
-                <field name="item_ids"/>
             </list>
         </field>
     </record>
@@ -31,7 +30,6 @@
                         <field name="year"/>
                         <field name="company_id"/>
                         <field name="project_ids" widget="many2many_tags"/>
-                        <field name="item_ids" widget="many2many_tags"/>
                     </group>
 
                     <group string="Results">
@@ -51,12 +49,13 @@
     </record>
 
     <!-- Menu -->
-    <menuitem id="menu_consumption_material_report_root"
-              name="Reports"
+    <menuitem id="menu_consumption_report_root"
+              name="Store Reports"
               sequence="10"/>
+
     <menuitem id="menu_consumption_material_report"
               name="Consumption Material Report"
-              parent="menu_consumption_material_report_root"
+              parent="menu_consumption_report_root"
               action="action_consumption_material_report"
               sequence="20"/>
 </odoo>
