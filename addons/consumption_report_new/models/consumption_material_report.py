@@ -3,7 +3,6 @@ from odoo import models, fields, api
 from datetime import datetime
 import calendar
 
-
 class ConsumptionMaterialReport(models.Model):
     _name = 'consumption.material.report'
     _description = 'Consumption Material Report'
@@ -23,7 +22,7 @@ class ConsumptionMaterialReport(models.Model):
     year = fields.Integer(string="Year", default=lambda self: datetime.today().year)
     company_id = fields.Many2one('res.company', string="Company", required=True, default=lambda self: self.env.company)
     project_ids = fields.Many2many('x_projects_list', string="Projects")
-    consumption_ids = fields.Many2many('x_consumed_materials', string="Consumed Materials", compute='_compute_consumptions', store=False)
+    transaction_ids = fields.Many2many('x_transaction', string="Transactions", compute='_compute_transactions', store=False)
 
     @api.depends('month', 'year')
     def _compute_name(self):
@@ -32,10 +31,10 @@ class ConsumptionMaterialReport(models.Model):
             rec.name = f"Consumption Material Report {month_name} {rec.year}"
 
     @api.depends('month', 'year', 'company_id', 'project_ids')
-    def _compute_consumptions(self):
+    def _compute_transactions(self):
         for rec in self:
             if not (rec.month and rec.year and rec.company_id and rec.project_ids):
-                rec.consumption_ids = [(5, 0, 0)]
+                rec.transaction_ids = [(5, 0, 0)]
                 continue
 
             month_int = int(rec.month)
@@ -43,13 +42,13 @@ class ConsumptionMaterialReport(models.Model):
             first_day = datetime(year_int, month_int, 1).date()
             last_day = datetime(year_int, month_int, calendar.monthrange(year_int, month_int)[1]).date()
 
-            matched_consumptions = self.env['x_consumed_materials'].search([
+            matched_transactions = self.env['x_transaction'].search([
                 ('x_studio_company', '=', rec.company_id.id),
                 ('x_studio_project', 'in', rec.project_ids.ids)
             ])
 
             valid_ids = []
-            for r in matched_consumptions:
+            for r in matched_transactions:
                 for line in r.x_studio_item_lines:
                     if not line.x_studio_date:
                         continue
@@ -58,4 +57,4 @@ class ConsumptionMaterialReport(models.Model):
                         valid_ids.append(r.id)
                         break
 
-            rec.consumption_ids = [(6, 0, list(set(valid_ids)))]
+            rec.transaction_ids = [(6, 0, list(set(valid_ids)))]
