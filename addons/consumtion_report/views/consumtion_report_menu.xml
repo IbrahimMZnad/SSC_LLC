@@ -1,0 +1,15 @@
+<odoo>
+    <menuitem id="menu_consumtion_report_root" name="Consumption Reports" sequence="10"/>
+    <menuitem id="menu_consumtion_report" name="Reports" parent="menu_consumtion_report_root" sequence="1"/>
+
+    <record id="action_consumtion_report" model="ir.actions.act_window">
+        <field name="name">Consumption Report</field>
+        <field name="res_model">consumtion.report</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_consumtion_report_action" 
+              parent="menu_consumtion_report" 
+              action="action_consumtion_report" 
+              sequence="1"/>
+</odoo>
