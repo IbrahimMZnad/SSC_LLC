@@ -3,7 +3,7 @@
     'name': 'Consumption Material Report',
     'version': '1.0',
     'author': 'Ibrahim M. Elznad',
-    'category': 'Reports',
+    'category': 'Warehouse',
     'summary': 'Generate monthly and daily consumption material reports by project and company',
     'depends': ['base'],
     'data': [
@@ -11,5 +11,4 @@
     ],
     'application': True,
     'installable': True,
-    'license': 'LGPL-3',
 }
