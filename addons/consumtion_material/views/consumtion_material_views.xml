@@ -26,7 +26,6 @@
                             <field name="name" readonly="1"/>
                         </h1>
                     </group>
-
                     <group string="Filters" class="oe_highlight">
                         <group>
                             <field name="date_from"/>
