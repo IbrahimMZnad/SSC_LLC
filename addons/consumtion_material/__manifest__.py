@@ -10,7 +10,6 @@ Generate and filter consumed materials based on company, project, date range, an
     'author': 'Ibrahim Alznad',
     'depends': ['base'],
     'data': [
-        'security/ir.model.access.csv',
         'views/consumtion_material_views.xml',
     ],
     'installable': True,
