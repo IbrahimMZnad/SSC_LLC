@@ -33,7 +33,7 @@
                     </group>
 
                     <group string="Results">
-                        <field name="consumption_ids" widget="many2many_tags"/>
+                        <field name="transaction_ids" widget="many2many_tags"/>
                     </group>
                 </sheet>
             </form>
