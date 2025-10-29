@@ -1,0 +1,51 @@
+<odoo>
+    <record id="view_consumtion_report_form" model="ir.ui.view">
+        <field name="name">consumtion.report.form</field>
+        <field name="model">consumtion.report</field>
+        <field name="arch" type="xml">
+            <form string="Consumption Report" class="o_form_x2many">
+                <sheet>
+                    <group>
+                        <group col="2">
+                            <field name="company"/>
+                            <field name="date_from"/>
+                            <field name="date_to"/>
+                        </group>
+                        <group col="3">
+                            <field name="project" widget="many2many_tags"/>
+                            <field name="item" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Consumed Materials">
+                            <field name="all_material_consumed">
+                                <tree editable="false">
+                                    <field name="name"/>
+                                    <field name="x_studio_date_2"/>
+                                    <field name="x_studio_project"/>
+                                    <field name="x_studio_company"/>
+                                    <field name="x_studio_item_1"/>
+                                    <field name="x_studio_quantity"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_consumtion_report_tree" model="ir.ui.view">
+        <field name="name">consumtion.report.tree</field>
+        <field name="model">consumtion.report</field>
+        <field name="arch" type="xml">
+            <tree string="Consumption Report">
+                <field name="company"/>
+                <field name="date_from"/>
+                <field name="date_to"/>
+                <field name="project"/>
+                <field name="item"/>
+            </tree>
+        </field>
+    </record>
+</odoo>
