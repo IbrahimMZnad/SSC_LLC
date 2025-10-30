@@ -34,7 +34,7 @@ class ProjectMaterialConsumptionLine(models.Model):
             if rec.item and rec.consumption_id.name:
                 needed_records = self.env['x_quantities_summary'].search([
                     ('x_studio_project.id', '=', rec.consumption_id.name.id),
-                    ('x_studio_project.id', '=', rec.consumption_id.company_id)
+                    ('x_studio_company.id', '=', rec.consumption_id.company_id)
                 ])
                 for n in needed_records:
                     for line in n.x_studio_items_needed:
