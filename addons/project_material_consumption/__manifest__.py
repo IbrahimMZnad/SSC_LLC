@@ -5,6 +5,7 @@
     'depends': ['base'],
     'data': [
         'views/project_material_consumption_views.xml',
+        'data/project_material_consumption_cron.xml',
     ],
     'application': True,
     'installable': True,
