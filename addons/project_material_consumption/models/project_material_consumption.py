@@ -27,7 +27,7 @@ class ProjectMaterialConsumptionLine(models.Model):
     # COMPUTE FIELDS
     # --------------------------------------------------
 
-    @api.depends('item', 'consumption_id.name', 'consumption_id.company_id')
+    @api.depends('item', 'consumption_id.name')
     def _compute_quantity_needed(self):
         for rec in self:
             qty_sum = 0
@@ -42,7 +42,7 @@ class ProjectMaterialConsumptionLine(models.Model):
                             qty_sum += line.x_studio_quantity
             rec.quantity_needed = qty_sum
 
-    @api.depends('item', 'consumption_id.name', 'consumption_id.company_id')
+    @api.depends('item', 'consumption_id.name')
     def _compute_quantity_consumed(self):
         for rec in self:
             qty_sum = 0
