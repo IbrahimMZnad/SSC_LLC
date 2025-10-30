@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Form View -->
+    <!-- FORM VIEW -->
     <record id="view_project_material_consumption_form" model="ir.ui.view">
         <field name="name">project.material.consumption.form</field>
         <field name="model">project.material.consumption</field>
@@ -14,17 +14,15 @@
                     <notebook>
                         <page string="Materials">
                             <field name="line_ids">
-                                <form string="Material Lines">
-                                    <sheet>
-                                        <group>
-                                            <field name="item"/>
-                                            <field name="quantity_needed"/>
-                                            <field name="quantity_consumed"/>
-                                            <field name="quantity_ordered"/>
-                                            <field name="balance_to_order"/>
-                                            <field name="balance_to_use"/>
-                                        </group>
-                                    </sheet>
+                                <form>
+                                    <group>
+                                        <field name="item"/>
+                                        <field name="quantity_needed"/>
+                                        <field name="quantity_consumed"/>
+                                        <field name="quantity_ordered"/>
+                                        <field name="balance_to_order"/>
+                                        <field name="balance_to_use"/>
+                                    </group>
                                 </form>
                             </field>
                         </page>
@@ -34,26 +32,26 @@
         </field>
     </record>
 
-    <!-- List View for Main Model -->
+    <!-- LIST VIEW -->
     <record id="view_project_material_consumption_list" model="ir.ui.view">
         <field name="name">project.material.consumption.list</field>
         <field name="model">project.material.consumption</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name"/>
                 <field name="company_id"/>
-            </tree>
+            </list>
         </field>
     </record>
 
-    <!-- Action -->
+    <!-- ACTION -->
     <record id="action_project_material_consumption" model="ir.actions.act_window">
         <field name="name">Project Material Consumption</field>
         <field name="res_model">project.material.consumption</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
-    <!-- Menus -->
+    <!-- MENU -->
     <menuitem id="menu_project_material_consumption_root" name="Project Material Consumption"/>
     <menuitem id="menu_project_material_consumption_main" name="Project Materials" parent="menu_project_material_consumption_root" action="action_project_material_consumption"/>
 </odoo>
