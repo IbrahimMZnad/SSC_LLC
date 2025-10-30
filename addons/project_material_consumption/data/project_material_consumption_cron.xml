@@ -2,13 +2,12 @@
 <odoo>
     <record id="ir_cron_add_all_items" model="ir.cron">
         <field name="name">Add All Items to Project Material Consumption</field>
-        <field name="model_id" ref="model_project_material_consumption_cron"/>
+        <field name="model_id" ref="project_material_consumption.model_project_material_consumption"/>
         <field name="state">code</field>
         <field name="code">model.add_all_items_daily()</field>
         <field name="active" eval="True"/>
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
-        <field name="numbercall">-1</field>
         <field name="nextcall" eval="(DateTime.now() + relativedelta(hour=1, minute=0, second=0))"/>
         <field name="timezone">Asia/Dubai</field>
     </record>
