@@ -1,6 +1,6 @@
 {
     "name": "Project Material Consumption",
-    "version": "14.0.1.0.0",
+    'version': '18.0.1.0',
     "summary": "Track materials needed, consumed and ordered per project",
     "category": "Operations",
     "author": "Ibrahim",
