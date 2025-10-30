@@ -17,15 +17,36 @@ class ProjectMaterialConsumption(models.Model):
 
     @api.model
     def add_all_items_daily(self):
-        """Add all items from x_all_items_list to all Project Material Consumption records"""
-        items = self.env['x_all_items_list'].search([])
+        """Add only items that have consumed or ordered records"""
+        Transactions = self.env['x_transaction']
+        PurchaseOrders = self.env['purchase.order']
+
         for rec in self.search([]):
-            for item in items:
-                # منع التكرار
-                if not rec.line_ids.filtered(lambda l: l.item == item):
+            # المواد اللي تم استهلاكها
+            consumed_items = Transactions.search([
+                ('x_studio_project', '=', rec.name.id),
+                ('x_studio_type_of_transaction', '=', 'Consumed'),
+                ('x_studio_company', '=', rec.company_id.id)
+            ]).mapped('x_studio_item_1')
+
+            # المواد اللي تم طلبها في أوامر الشراء
+            ordered_items = []
+            orders = PurchaseOrders.search([
+                ('x_studio_project', '=', rec.name.id),
+                ('company_id', '=', rec.company_id.id)
+            ])
+            for order in orders:
+                ordered_items += [line.x_studio_item.id for line in order.order_line if line.x_studio_item]
+
+            # توحيد القائمتين بدون تكرار
+            all_related_items = list(set(consumed_items.ids + ordered_items))
+
+            # إنشاء خطوط فقط للمواد المرتبطة فعليًا
+            for item_id in all_related_items:
+                if not rec.line_ids.filtered(lambda l: l.item.id == item_id):
                     self.env['project.material.consumption.line'].create({
                         'consumption_id': rec.id,
-                        'item': item.id,
+                        'item': item_id,
                     })
 
 
@@ -46,7 +67,7 @@ class ProjectMaterialConsumptionLine(models.Model):
         compute='_compute_quantity_needed',
         inverse='_inverse_quantity_needed',
         store=True,
-        readonly=False,  # ✅ الحقل صار قابل للتعديل
+        readonly=False,  # ✅ قابل للتعديل يدوياً
     )
 
     quantity_consumed = fields.Float(string='Quantity Consumed', compute='_compute_quantity_consumed', store=True)
@@ -61,7 +82,7 @@ class ProjectMaterialConsumptionLine(models.Model):
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_needed(self):
         for rec in self:
-            qty_sum = rec.quantity_needed  # للحفاظ على القيمة اليدوية إذا ما في بيانات
+            qty_sum = rec.quantity_needed  # الاحتفاظ بالقيمة اليدوية إذا لم توجد بيانات
             if rec.item and rec.consumption_id.name:
                 needed_records = self.env['x_quantities_summary'].search([
                     ('x_studio_project', '=', rec.consumption_id.name.id)
