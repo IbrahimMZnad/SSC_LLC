@@ -7,13 +7,20 @@ class ProjectMaterialConsumption(models.Model):
 
     name = fields.Many2one('x_projects_list', string='Project', required=True)
     company_id = fields.Many2one('res.company', string='Company', required=True)
-    line_ids = fields.One2many('project.material.consumption.line', 'consumption_id', string='Lines')
+
+    # فقط السطور التي لديها قيم حقيقية
+    line_ids = fields.One2many(
+        'project.material.consumption.line',
+        'consumption_id',
+        string='Lines',
+        domain="[('quantity_consumed', '!=', 0), ('quantity_ordered', '!=', 0)]"
+    )
 
     @api.model
     def add_all_items_daily(self):
         """Add all items from x_all_items_list to all Project Material Consumption records"""
         items = self.env['x_all_items_list'].search([])
-        for rec in self.search([]):  # loop over all Project Material Consumption records
+        for rec in self.search([]):
             for item in items:
                 if not rec.line_ids.filtered(lambda l: l.item == item):
                     self.env['project.material.consumption.line'].create({
@@ -26,7 +33,11 @@ class ProjectMaterialConsumptionLine(models.Model):
     _name = 'project.material.consumption.line'
     _description = 'Project Material Consumption Line'
 
-    consumption_id = fields.Many2one('project.material.consumption', string='Consumption Reference', ondelete='cascade')
+    consumption_id = fields.Many2one(
+        'project.material.consumption',
+        string='Consumption Reference',
+        ondelete='cascade'
+    )
     item = fields.Many2one('x_all_items_list', string='Item', required=True)
 
     quantity_needed = fields.Float(string='Quantity Needed', compute='_compute_quantity_needed', store=True)
@@ -51,12 +62,12 @@ class ProjectMaterialConsumptionLine(models.Model):
                     if hasattr(n, 'x_studio_items_needed'):
                         for line in n.x_studio_items_needed:
                             if hasattr(line, 'x_name') and hasattr(line, 'x_studio_quantity'):
+                                # إذا موجود x_item استعمله، وإلا استخدم x_name
                                 if hasattr(line, 'x_item') and line.x_item and line.x_item.id == rec.item.id:
                                     qty_sum += line.x_studio_quantity
                                 elif line.x_name and line.x_name == rec.item.x_name:
                                     qty_sum += line.x_studio_quantity
             rec.quantity_needed = qty_sum
-
 
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_consumed(self):
