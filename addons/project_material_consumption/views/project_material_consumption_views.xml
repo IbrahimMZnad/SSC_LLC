@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_project_material_consumption_form" model="ir.ui.view">
+        <field name="name">project.material.consumption.form</field>
+        <field name="model">project.material.consumption</field>
+        <field name="arch" type="xml">
+            <form string="Project Material Consumption">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="company_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Materials">
+                            <field name="line_ids">
+                                <tree editable="bottom">
+                                    <field name="item"/>
+                                    <field name="quantity_needed"/>
+                                    <field name="quantity_consumed"/>
+                                    <field name="quantity_ordered"/>
+                                    <field name="balance_to_order"/>
+                                    <field name="balance_to_use"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_project_material_consumption_list" model="ir.ui.view">
+        <field name="name">project.material.consumption.list</field>
+        <field name="model">project.material.consumption</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="company_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <menuitem id="menu_project_material_consumption_root" name="Project Material Consumption"/>
+    <menuitem id="menu_project_material_consumption_main" name="Project Materials" parent="menu_project_material_consumption_root" action="action_project_material_consumption"/>
+
+    <record id="action_project_material_consumption" model="ir.actions.act_window">
+        <field name="name">Project Material Consumption</field>
+        <field name="res_model">project.material.consumption</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
