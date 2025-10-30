@@ -34,7 +34,6 @@ class ProjectMaterialConsumptionLine(models.Model):
             if rec.item and rec.consumption_id.name:
                 needed_records = self.env['x_quantities_summary'].search([
                     ('x_studio_project.id', '=', rec.consumption_id.name.id),
-                    ('x_studio_company.id', '=', rec.consumption_id.company_id)
                 ])
                 for n in needed_records:
                     for line in n.x_studio_items_needed:
@@ -63,7 +62,7 @@ class ProjectMaterialConsumptionLine(models.Model):
             if rec.item and rec.consumption_id.name:
                 orders = self.env['purchase.order'].search([
                     ('x_studio_project.id', '=', rec.consumption_id.name.id),
-                    ('company_id.id', '=', rec.consumption_id..company_id)
+                    ('company_id.id', '=', rec.consumption_id.company_id)
                 ])
                 for order in orders:
                     for line in order.order_line:
