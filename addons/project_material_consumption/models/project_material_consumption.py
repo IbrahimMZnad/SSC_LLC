@@ -22,11 +22,13 @@ class ProjectMaterialConsumption(models.Model):
 
     @api.model
     def add_all_items_daily(self):
-        """Add only items that have consumed or ordered records"""
+        """Add only items that have consumed or ordered records for line_ids, 
+        and add all needed items for boq_line_ids"""
         Transactions = self.env['x_transaction']
         PurchaseOrders = self.env['purchase.order']
 
         for rec in self.search([]):
+            # ===== Lines: Add items with transactions/orders =====
             consumed_items = Transactions.search([
                 ('x_studio_project', '=', rec.name.id),
                 ('x_studio_type_of_transaction', '=', 'Consumed'),
@@ -50,6 +52,7 @@ class ProjectMaterialConsumption(models.Model):
                         'item': item_id,
                     })
 
+            # ===== BOQ Lines: Add all needed items =====
             needed_records = self.env['x_quantities_summary'].search([
                 ('x_studio_project', '=', rec.name.id)
             ])
@@ -94,8 +97,11 @@ class ProjectMaterialConsumptionLine(models.Model):
     quantity_ordered = fields.Float(string='Quantity Ordered', compute='_compute_quantity_ordered', store=True)
     balance_to_order = fields.Float(string='Balance to Order', compute='_compute_balance_to_order', store=True)
     balance_to_use = fields.Float(string='Balance to Use', compute='_compute_balance_to_use', store=True)
-
     stock = fields.Float(string='Stock', compute='_compute_stock', store=True)
+
+    # ===== New Fields =====
+    unit = fields.Char(related='item.x_studio_unit', string='Unit')
+    type_of_material = fields.Many2one('x_type_of_material', related='item.x_studio_type_of_material', string='Type of Material')
 
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_needed(self):
@@ -199,8 +205,11 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
     quantity_ordered = fields.Float(string='Quantity Ordered', compute='_compute_quantity_ordered', store=True)
     balance_to_order = fields.Float(string='Balance to Order', compute='_compute_balance_to_order', store=True)
     balance_to_use = fields.Float(string='Balance to Use', compute='_compute_balance_to_use', store=True)
-
     stock = fields.Float(string='Stock', compute='_compute_stock', store=True)
+
+    # ===== New Fields =====
+    unit = fields.Char(related='item.x_studio_unit', string='Unit')
+    type_of_material = fields.Many2one('x_type_of_material', related='item.x_studio_type_of_material', string='Type of Material')
 
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_needed(self):
@@ -213,11 +222,15 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
                 for n in needed_records:
                     if hasattr(n, 'x_studio_items_needed'):
                         for line in n.x_studio_items_needed:
-                            if hasattr(line, 'x_name') and hasattr(line, 'x_studio_quantity'):
-                                if hasattr(line, 'x_item') and line.x_item and line.x_item.id == rec.item.id:
-                                    qty_sum += line.x_studio_quantity
-                                elif line.x_name and line.x_name == rec.item.x_name:
-                                    qty_sum += line.x_studio_quantity
+                            item_id = None
+                            if hasattr(line, 'x_item') and line.x_item:
+                                item_id = line.x_item.id
+                            elif hasattr(line, 'x_name'):
+                                item_obj = self.env['x_all_items_list'].search([('x_name', '=', line.x_name)], limit=1)
+                                if item_obj:
+                                    item_id = item_obj.id
+                            if item_id and item_id == rec.item.id:
+                                qty_sum += getattr(line, 'x_studio_quantity', 0) or 0
             rec.quantity_needed = qty_sum
 
     @api.depends('item', 'consumption_id.name')
@@ -231,8 +244,7 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
                     ('x_studio_item_1', '=', rec.item.id),
                     ('x_studio_company', '=', rec.consumption_id.company_id.id)
                 ])
-                if consumed_records:
-                    qty_sum = sum(getattr(r, 'x_studio_quantity', 0) or 0 for r in consumed_records)
+                qty_sum = sum(getattr(r, 'x_studio_quantity', 0) or 0 for r in consumed_records)
             rec.quantity_consumed = qty_sum
 
     @api.depends('item', 'consumption_id.name')

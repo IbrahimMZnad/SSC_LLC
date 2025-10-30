@@ -17,6 +17,8 @@
                                 <form>
                                     <group>
                                         <field name="item"/>
+                                        <field name="unit"/>
+                                        <field name="type_of_material"/>
                                         <field name="quantity_needed"/>
                                         <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
                                         <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
@@ -32,6 +34,8 @@
                                 <form>
                                     <group>
                                         <field name="item"/>
+                                        <field name="unit"/>
+                                        <field name="type_of_material"/>
                                         <field name="quantity_needed"/>
                                         <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
                                         <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
