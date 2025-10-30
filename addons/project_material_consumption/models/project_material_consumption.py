@@ -50,7 +50,7 @@ class ProjectMaterialConsumptionLine(models.Model):
                     ('x_studio_project.id', '=', rec.consumption_id.name.id),
                     ('x_studio_type_of_transaction', '=', 'Consumed'),
                     ('x_studio_item_1.id', '=', rec.item.id),
-                    ('x_studio_company.id', '=', rec.consumption_id.company_id)
+                    ('x_studio_company.id', '=', rec.consumption_id.company_id.id)
                 ])
                 qty_sum = sum(consumed_records.mapped('x_studio_quantity'))
             rec.quantity_consumed = qty_sum
@@ -62,7 +62,7 @@ class ProjectMaterialConsumptionLine(models.Model):
             if rec.item and rec.consumption_id.name:
                 orders = self.env['purchase.order'].search([
                     ('x_studio_project.id', '=', rec.consumption_id.name.id),
-                    ('company_id.id', '=', rec.consumption_id.company_id)
+                    ('company_id.id', '=', rec.consumption_id.company_id.id)
                 ])
                 for order in orders:
                     for line in order.order_line:
