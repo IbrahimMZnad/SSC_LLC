@@ -27,13 +27,14 @@ class ProjectMaterialConsumptionLine(models.Model):
     # COMPUTE FIELDS
     # --------------------------------------------------
 
-    @api.depends('item', 'consumption_id.name')
+    @api.depends('item', 'consumption_id.name', 'consumption_id.company_id')
     def _compute_quantity_needed(self):
         for rec in self:
             qty_sum = 0
             if rec.item and rec.consumption_id.name:
                 needed_records = self.env['x_quantities_summary'].search([
-                    ('x_studio_project.id', '=', rec.consumption_id.name.id)
+                    ('x_studio_project.id', '=', rec.consumption_id.name.id),
+                    ('x_studio_project.id', '=', rec.consumption_id.company_id)
                 ])
                 for n in needed_records:
                     for line in n.x_studio_items_needed:
@@ -41,7 +42,7 @@ class ProjectMaterialConsumptionLine(models.Model):
                             qty_sum += line.x_studio_quantity
             rec.quantity_needed = qty_sum
 
-    @api.depends('item', 'consumption_id.name')
+    @api.depends('item', 'consumption_id.name', 'consumption_id.company_id')
     def _compute_quantity_consumed(self):
         for rec in self:
             qty_sum = 0
@@ -49,7 +50,8 @@ class ProjectMaterialConsumptionLine(models.Model):
                 consumed_records = self.env['x_transaction'].search([
                     ('x_studio_project.id', '=', rec.consumption_id.name.id),
                     ('x_studio_type_of_transaction', '=', 'Consumed'),
-                    ('x_studio_item_1.id', '=', rec.item.id)
+                    ('x_studio_item_1.id', '=', rec.item.id),
+                    ('x_studio_company.id', '=', rec.consumption_id.company_id)
                 ])
                 qty_sum = sum(consumed_records.mapped('x_studio_quantity'))
             rec.quantity_consumed = qty_sum
@@ -60,7 +62,8 @@ class ProjectMaterialConsumptionLine(models.Model):
             qty_sum = 0
             if rec.item and rec.consumption_id.name:
                 orders = self.env['purchase.order'].search([
-                    ('x_studio_project.id', '=', rec.consumption_id.name.id)
+                    ('x_studio_project.id', '=', rec.consumption_id.name.id),
+                    ('company_id.id', '=', rec.consumption_id..company_id)
                 ])
                 for order in orders:
                     for line in order.order_line:
