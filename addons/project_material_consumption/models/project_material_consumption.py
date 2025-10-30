@@ -23,9 +23,9 @@ class ProjectMaterialConsumptionLine(models.Model):
     balance_to_order = fields.Float(string='Balance to Order', compute='_compute_balance_to_order', store=True)
     balance_to_use = fields.Float(string='Balance to Use', compute='_compute_balance_to_use', store=True)
 
-    # --------------------------------------------------
+    # ------------------------------
     # COMPUTE FIELDS
-    # --------------------------------------------------
+    # ------------------------------
 
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_needed(self):
@@ -33,47 +33,57 @@ class ProjectMaterialConsumptionLine(models.Model):
             qty_sum = 0
             if rec.item and rec.consumption_id.name:
                 needed_records = self.env['x_quantities_summary'].search([
-                    ('x_studio_project.id', '=', rec.consumption_id.name.id)
+                    ('x_studio_project', '=', rec.consumption_id.name.id)
                 ])
                 for n in needed_records:
-                    for line in n.x_studio_items_needed:
-                        if line.x_name == rec.item.name:
-                            qty_sum += line.x_studio_quantity
+                    if hasattr(n, 'x_studio_items_needed'):
+                        for line in n.x_studio_items_needed:
+                            if hasattr(line, 'x_name') and hasattr(line, 'x_studio_quantity'):
+                                # استخدم ID لو متوفر بدل الاسم
+                                if hasattr(line, 'x_item') and line.x_item and line.x_item.id == rec.item.id:
+                                    qty_sum += line.x_studio_quantity
+                                # fallback إذا x_item غير موجود استخدم الاسم
+                                elif line.x_name and line.x_name == rec.item.name:
+                                    qty_sum += line.x_studio_quantity
             rec.quantity_needed = qty_sum
 
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_consumed(self):
         for rec in self:
             qty_sum = 0
-            if rec.item and rec.consumption_id.name:
+            if rec.item and rec.consumption_id.name and rec.consumption_id.company_id:
                 consumed_records = self.env['x_transaction'].search([
-                    ('x_studio_project.id', '=', rec.consumption_id.name.id),
+                    ('x_studio_project', '=', rec.consumption_id.name.id),
                     ('x_studio_type_of_transaction', '=', 'Consumed'),
-                    ('x_studio_item_1.id', '=', rec.item.id)
+                    ('x_studio_item_1', '=', rec.item.id),
+                    ('x_studio_company', '=', rec.consumption_id.company_id.id)
                 ])
-                qty_sum = sum(consumed_records.mapped('x_studio_quantity'))
+                if consumed_records:
+                    qty_sum = sum(getattr(r, 'x_studio_quantity', 0) or 0 for r in consumed_records)
             rec.quantity_consumed = qty_sum
 
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_ordered(self):
         for rec in self:
             qty_sum = 0
-            if rec.item and rec.consumption_id.name:
+            if rec.item and rec.consumption_id.name and rec.consumption_id.company_id:
                 orders = self.env['purchase.order'].search([
-                    ('x_studio_project.id', '=', rec.consumption_id.name.id)
+                    ('x_studio_project', '=', rec.consumption_id.name.id),
+                    ('company_id', '=', rec.consumption_id.company_id.id)
                 ])
                 for order in orders:
-                    for line in order.order_line:
-                        if line.x_studio_item.id == rec.item.id:
-                            qty_sum += line.product_qty
+                    if hasattr(order, 'order_line'):
+                        for line in order.order_line:
+                            if hasattr(line, 'x_studio_item') and line.x_studio_item and line.x_studio_item.id == rec.item.id:
+                                qty_sum += getattr(line, 'product_qty', 0) or 0
             rec.quantity_ordered = qty_sum
 
     @api.depends('quantity_needed', 'quantity_ordered')
     def _compute_balance_to_order(self):
         for rec in self:
-            rec.balance_to_order = rec.quantity_needed - rec.quantity_ordered
+            rec.balance_to_order = (rec.quantity_needed or 0) - (rec.quantity_ordered or 0)
 
     @api.depends('quantity_needed', 'quantity_consumed')
     def _compute_balance_to_use(self):
         for rec in self:
-            rec.balance_to_use = rec.quantity_needed - rec.quantity_consumed
+            rec.balance_to_use = (rec.quantity_needed or 0) - (rec.quantity_consumed or 0)
