@@ -26,6 +26,20 @@
                                 </form>
                             </field>
                         </page>
+                        <page string="BOQ Materials">
+                            <field name="boq_line_ids">
+                                <form>
+                                    <group>
+                                        <field name="item"/>
+                                        <field name="quantity_needed"/>
+                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
+                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                        <field name="balance_to_order"/>
+                                        <field name="balance_to_use"/>
+                                    </group>
+                                </form>
+                            </field>
+                        </page>
                     </notebook>
                 </sheet>
             </form>
