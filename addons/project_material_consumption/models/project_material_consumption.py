@@ -53,9 +53,10 @@ class ProjectMaterialConsumptionLine(models.Model):
                             if hasattr(line, 'x_name') and hasattr(line, 'x_studio_quantity'):
                                 if hasattr(line, 'x_item') and line.x_item and line.x_item.id == rec.item.id:
                                     qty_sum += line.x_studio_quantity
-                                elif line.x_name and line.x_name == rec.item.name:
+                                elif line.x_name and line.x_name == rec.item.x_name:
                                     qty_sum += line.x_studio_quantity
             rec.quantity_needed = qty_sum
+
 
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_consumed(self):
