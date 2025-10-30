@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
-
 class ProjectMaterialConsumption(models.Model):
     _name = 'project.material.consumption'
     _description = 'Project Material Consumption'
@@ -28,14 +27,12 @@ class ProjectMaterialConsumption(models.Model):
         PurchaseOrders = self.env['purchase.order']
 
         for rec in self.search([]):
-            # المواد اللي تم استهلاكها
             consumed_items = Transactions.search([
                 ('x_studio_project', '=', rec.name.id),
                 ('x_studio_type_of_transaction', '=', 'Consumed'),
                 ('x_studio_company', '=', rec.company_id.id)
             ]).mapped('x_studio_item_1')
 
-            # المواد اللي تم طلبها في أوامر الشراء
             ordered_items = []
             orders = PurchaseOrders.search([
                 ('x_studio_project', '=', rec.name.id),
@@ -44,10 +41,8 @@ class ProjectMaterialConsumption(models.Model):
             for order in orders:
                 ordered_items += [line.x_studio_item.id for line in order.order_line if line.x_studio_item]
 
-            # توحيد القائمتين بدون تكرار
             all_related_items = list(set(consumed_items.ids + ordered_items))
 
-            # إنشاء خطوط فقط للمواد المرتبطة فعليًا
             for item_id in all_related_items:
                 if not rec.line_ids.filtered(lambda l: l.item.id == item_id):
                     self.env['project.material.consumption.line'].create({
@@ -55,7 +50,6 @@ class ProjectMaterialConsumption(models.Model):
                         'item': item_id,
                     })
 
-            # إضافة خطوط BOQ Lines فقط إذا يوجد x_studio_items_needed
             needed_records = self.env['x_quantities_summary'].search([
                 ('x_studio_project', '=', rec.name.id)
             ])
@@ -66,7 +60,6 @@ class ProjectMaterialConsumption(models.Model):
                         if hasattr(line, 'x_item') and line.x_item:
                             item_id = line.x_item.id
                         elif hasattr(line, 'x_name'):
-                            # البحث عن item حسب الاسم
                             item_obj = self.env['x_all_items_list'].search([('x_name', '=', line.x_name)], limit=1)
                             if item_obj:
                                 item_id = item_obj.id
@@ -102,10 +95,12 @@ class ProjectMaterialConsumptionLine(models.Model):
     balance_to_order = fields.Float(string='Balance to Order', compute='_compute_balance_to_order', store=True)
     balance_to_use = fields.Float(string='Balance to Use', compute='_compute_balance_to_use', store=True)
 
+    stock = fields.Float(string='Stock', compute='_compute_stock', store=True)
+
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_needed(self):
         for rec in self:
-            qty_sum = rec.quantity_needed
+            qty_sum = 0
             if rec.item and rec.consumption_id.name:
                 needed_records = self.env['x_quantities_summary'].search([
                     ('x_studio_project', '=', rec.consumption_id.name.id)
@@ -164,6 +159,22 @@ class ProjectMaterialConsumptionLine(models.Model):
         for rec in self:
             rec.balance_to_use = (rec.quantity_needed or 0) - (rec.quantity_consumed or 0)
 
+    @api.depends('item', 'consumption_id.name')
+    def _compute_stock(self):
+        Inventory = self.env['x_inventory_stores_pro']
+        for rec in self:
+            total_stock = 0
+            inv_records = Inventory.search([
+                ('x_studio_project_1', '=', rec.consumption_id.name.id),
+                ('x_studio_company', '=', rec.consumption_id.company_id.id)
+            ])
+            for inv in inv_records:
+                if hasattr(inv, 'x_studio_one2many_field_113_1if9packl'):
+                    for line in inv.x_studio_one2many_field_113_1if9packl:
+                        if line.x_studio_item and line.x_studio_item.id == rec.item.id:
+                            total_stock += line.x_studio_available_quantity or 0
+            rec.stock = total_stock
+
 
 class ProjectMaterialConsumptionBoqLine(models.Model):
     _name = 'project.material.consumption.boq.line'
@@ -188,6 +199,8 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
     quantity_ordered = fields.Float(string='Quantity Ordered', compute='_compute_quantity_ordered', store=True)
     balance_to_order = fields.Float(string='Balance to Order', compute='_compute_balance_to_order', store=True)
     balance_to_use = fields.Float(string='Balance to Use', compute='_compute_balance_to_use', store=True)
+
+    stock = fields.Float(string='Stock', compute='_compute_stock', store=True)
 
     @api.depends('item', 'consumption_id.name')
     def _compute_quantity_needed(self):
@@ -247,3 +260,19 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
     def _compute_balance_to_use(self):
         for rec in self:
             rec.balance_to_use = (rec.quantity_needed or 0) - (rec.quantity_consumed or 0)
+
+    @api.depends('item', 'consumption_id.name')
+    def _compute_stock(self):
+        Inventory = self.env['x_inventory_stores_pro']
+        for rec in self:
+            total_stock = 0
+            inv_records = Inventory.search([
+                ('x_studio_project_1', '=', rec.consumption_id.name.id),
+                ('x_studio_company', '=', rec.consumption_id.company_id.id)
+            ])
+            for inv in inv_records:
+                if hasattr(inv, 'x_studio_one2many_field_113_1if9packl'):
+                    for line in inv.x_studio_one2many_field_113_1if9packl:
+                        if line.x_studio_item and line.x_studio_item.id == rec.item.id:
+                            total_stock += line.x_studio_available_quantity or 0
+            rec.stock = total_stock
