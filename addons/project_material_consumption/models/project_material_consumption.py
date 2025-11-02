@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
+
 class ProjectMaterialConsumption(models.Model):
     _name = 'project.material.consumption'
     _description = 'Project Material Consumption'
@@ -22,37 +23,17 @@ class ProjectMaterialConsumption(models.Model):
 
     @api.model
     def add_all_items_daily(self):
-        """Add only items that have consumed or ordered records for line_ids, 
-        and add all needed items for boq_line_ids"""
+        """Add items according to conditions:
+        - If item exists in x_studio_items_needed → add to BOQ lines (only there)
+        - Else if item appears in transactions/orders → add to regular lines
+        """
         Transactions = self.env['x_transaction']
         PurchaseOrders = self.env['purchase.order']
+        ItemModel = self.env['x_all_items_list']
 
         for rec in self.search([]):
-            # ===== Lines: Add items with transactions/orders =====
-            consumed_items = Transactions.search([
-                ('x_studio_project', '=', rec.name.id),
-                ('x_studio_type_of_transaction', '=', 'Consumed'),
-                ('x_studio_company', '=', rec.company_id.id)
-            ]).mapped('x_studio_item_1')
-
-            ordered_items = []
-            orders = PurchaseOrders.search([
-                ('x_studio_project', '=', rec.name.id),
-                ('company_id', '=', rec.company_id.id)
-            ])
-            for order in orders:
-                ordered_items += [line.x_studio_item.id for line in order.order_line if line.x_studio_item]
-
-            all_related_items = list(set(consumed_items.ids + ordered_items))
-
-            for item_id in all_related_items:
-                if not rec.line_ids.filtered(lambda l: l.item.id == item_id):
-                    self.env['project.material.consumption.line'].create({
-                        'consumption_id': rec.id,
-                        'item': item_id,
-                    })
-
-            # ===== BOQ Lines: Add all needed items =====
+            # ===== 1) اجمع كل المواد المَطلوبة (Needed) =====
+            needed_item_ids = []
             needed_records = self.env['x_quantities_summary'].search([
                 ('x_studio_project', '=', rec.name.id)
             ])
@@ -62,16 +43,55 @@ class ProjectMaterialConsumption(models.Model):
                         item_id = None
                         if hasattr(line, 'x_item') and line.x_item:
                             item_id = line.x_item.id
-                        elif hasattr(line, 'x_name'):
-                            item_obj = self.env['x_all_items_list'].search([('x_name', '=', line.x_name)], limit=1)
+                        elif hasattr(line, 'x_name') and line.x_name:
+                            item_obj = ItemModel.search([('x_name', '=', line.x_name)], limit=1)
                             if item_obj:
                                 item_id = item_obj.id
-                        if item_id and not rec.boq_line_ids.filtered(lambda l: l.item.id == item_id):
-                            self.env['project.material.consumption.boq.line'].create({
-                                'consumption_id': rec.id,
-                                'item': item_id,
-                            })
+                        if item_id:
+                            needed_item_ids.append(item_id)
+            needed_item_ids = list(set(needed_item_ids))
 
+            # ===== 2) اجمع المواد من Transactions و Purchase Orders =====
+            consumed_items = Transactions.search([
+                ('x_studio_project', '=', rec.name.id),
+                ('x_studio_type_of_transaction', '=', 'Consumed'),
+                ('x_studio_company', '=', rec.company_id.id)
+            ]).mapped('x_studio_item_1')
+            consumed_ids = consumed_items.ids
+
+            ordered_ids = []
+            orders = PurchaseOrders.search([
+                ('x_studio_project', '=', rec.name.id),
+                ('company_id', '=', rec.company_id.id)
+            ])
+            for order in orders:
+                ordered_ids += [ln.x_studio_item.id for ln in order.order_line if ln.x_studio_item]
+            ordered_ids = list(set(ordered_ids))
+
+            consumed_or_ordered_ids = list(set(consumed_ids + ordered_ids))
+
+            # ===== 3) أضف المواد المَطلوبة فقط إلى BOQ Lines =====
+            for item_id in needed_item_ids:
+                if not rec.boq_line_ids.filtered(lambda l: l.item.id == item_id):
+                    self.env['project.material.consumption.boq.line'].create({
+                        'consumption_id': rec.id,
+                        'item': item_id,
+                    })
+
+            # ===== 4) أضف المواد الأخرى (غير المَطلوبة) إلى Lines العادية =====
+            for item_id in consumed_or_ordered_ids:
+                if item_id in needed_item_ids:
+                    continue  # تخطى المواد المضافة مسبقاً في BOQ
+                if not rec.line_ids.filtered(lambda l: l.item.id == item_id):
+                    self.env['project.material.consumption.line'].create({
+                        'consumption_id': rec.id,
+                        'item': item_id,
+                    })
+
+
+# =====================================================================
+#                              LINE MODEL
+# =====================================================================
 
 class ProjectMaterialConsumptionLine(models.Model):
     _name = 'project.material.consumption.line'
@@ -99,7 +119,7 @@ class ProjectMaterialConsumptionLine(models.Model):
     balance_to_use = fields.Float(string='Balance to Use', compute='_compute_balance_to_use', store=True)
     stock = fields.Float(string='Stock', compute='_compute_stock', store=True)
 
-    # ===== New Fields =====
+    # ===== Related Fields =====
     unit = fields.Char(related='item.x_studio_unit', string='Unit')
     type_of_material = fields.Many2one('x_type_of_material', related='item.x_studio_type_of_material', string='Type of Material')
 
@@ -182,6 +202,10 @@ class ProjectMaterialConsumptionLine(models.Model):
             rec.stock = total_stock
 
 
+# =====================================================================
+#                           BOQ LINE MODEL
+# =====================================================================
+
 class ProjectMaterialConsumptionBoqLine(models.Model):
     _name = 'project.material.consumption.boq.line'
     _description = 'Project Material Consumption BOQ Line'
@@ -207,7 +231,7 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
     balance_to_use = fields.Float(string='Balance to Use', compute='_compute_balance_to_use', store=True)
     stock = fields.Float(string='Stock', compute='_compute_stock', store=True)
 
-    # ===== New Fields =====
+    # ===== Related Fields =====
     unit = fields.Char(related='item.x_studio_unit', string='Unit')
     type_of_material = fields.Many2one('x_type_of_material', related='item.x_studio_type_of_material', string='Type of Material')
 
