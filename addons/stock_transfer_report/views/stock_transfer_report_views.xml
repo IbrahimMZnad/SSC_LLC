@@ -20,6 +20,7 @@
                                     <field name="item_serial_no"/>
                                     <field name="unit"/>
                                     <field name="type_of_material"/>
+                                    <field name="date"/>
                                 </list>
                                 <form>
                                     <group>
@@ -28,6 +29,7 @@
                                         <field name="item_serial_no"/>
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
+                                        <field name="date"/>
                                     </group>
                                 </form>
                             </field>
@@ -40,6 +42,7 @@
                                     <field name="item_serial_no"/>
                                     <field name="unit"/>
                                     <field name="type_of_material"/>
+                                    <field name="date"/>
                                 </list>
                                 <form>
                                     <group>
@@ -48,6 +51,7 @@
                                         <field name="item_serial_no"/>
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
+                                        <field name="date"/>
                                     </group>
                                 </form>
                             </field>
