@@ -1,63 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- FORM VIEW -->
-    <record id="view_project_material_consumption_form" model="ir.ui.view">
-        <field name="name">project.material.consumption.form</field>
-        <field name="model">project.material.consumption</field>
+    <record id="view_stock_transfer_report_form" model="ir.ui.view">
+        <field name="name">stock.transfer.report.form</field>
+        <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <form string="Project Material Consumption">
+            <form string="Stock Transfer Report">
                 <sheet>
                     <!-- Header Fields -->
                     <group>
-                        <field name="name"/>
-                        <field name="company_id"/>
+                        <field name="from_store"/>
+                        <field name="company_from"/>
+                        <field name="to_store"/>
+                        <field name="company_to"/>
                     </group>
 
-                    <!-- Buttons (يمكن إضافة زر حساب أو Fetch هنا إذا لزم) -->
-                    <!--
+                    <!-- Fetch Button -->
                     <group>
-                        <button name="action_compute_materials"
-                                string="Compute Materials"
+                        <button name="action_fetch_transactions"
+                                string="🔄 Fetch Transactions"
                                 type="object"
-                                class="btn-primary"/>
+                                class="btn-primary"
+                                icon="fa-refresh"/>
                     </group>
-                    -->
 
                     <!-- Notebook Pages -->
                     <notebook>
-                        <!-- Materials Page -->
-                        <page string="Materials">
-                            <field name="line_ids">
-                                <form string="Material Line">
+                        <!-- Outgoing Lines Page -->
+                        <page string="Outgoing Lines">
+                            <field name="outgoing_lines" context="{'default_report_type': 'outgoing'}">
+                                <form string="Outgoing Line">
                                     <group>
+                                        <field name="description"/>
                                         <field name="item"/>
+                                        <field name="item_serial_no"/>
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
-                                        <field name="quantity_needed"/>
-                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed','=',0)]}"/>
-                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered','=',0)]}"/>
-                                        <field name="balance_to_order"/>
-                                        <field name="balance_to_use"/>
-                                        <field name="stock"/>
+                                        <field name="date"/>
+                                        <field name="quantity"/>
+                                        <field name="notes"/>
                                     </group>
                                 </form>
                             </field>
                         </page>
 
-                        <!-- BOQ Lines Page -->
-                        <page string="BOQ Lines">
-                            <field name="boq_line_ids">
-                                <form string="BOQ Line">
+                        <!-- Incoming Lines Page -->
+                        <page string="Incoming Lines">
+                            <field name="incoming_lines" context="{'default_report_type': 'incoming'}">
+                                <form string="Incoming Line">
                                     <group>
+                                        <field name="description"/>
                                         <field name="item"/>
+                                        <field name="item_serial_no"/>
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
-                                        <field name="quantity_needed"/>
-                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed','=',0)]}"/>
-                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered','=',0)]}"/>
-                                        <field name="balance_to_order"/>
-                                        <field name="balance_to_use"/>
-                                        <field name="stock"/>
+                                        <field name="date"/>
+                                        <field name="quantity"/>
+                                        <field name="notes"/>
                                     </group>
                                 </form>
                             </field>
@@ -69,26 +68,30 @@
     </record>
 
     <!-- LIST VIEW -->
-    <record id="view_project_material_consumption_list" model="ir.ui.view">
-        <field name="name">project.material.consumption.list</field>
-        <field name="model">project.material.consumption</field>
+    <record id="view_stock_transfer_report_list" model="ir.ui.view">
+        <field name="name">stock.transfer.report.list</field>
+        <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <tree string="Project Material Consumption">
-                <field name="name"/>
-                <field name="company_id"/>
-            </tree>
+            <list string="Stock Transfer Reports">
+                <field name="from_store"/>
+                <field name="company_from"/>
+                <field name="to_store"/>
+                <field name="company_to"/>
+                <field name="create_date"/>
+                <field name="write_date"/>
+            </list>
         </field>
     </record>
 
-    <!-- ACTION WINDOW -->
-    <record id="action_project_material_consumption" model="ir.actions.act_window">
-        <field name="name">Project Material Consumption</field>
-        <field name="res_model">project.material.consumption</field>
-        <field name="view_mode">tree,form</field>
-        <field name="view_id" ref="view_project_material_consumption_list"/>
+    <!-- ACTION -->
+    <record id="action_stock_transfer_report" model="ir.actions.act_window">
+        <field name="name">Stock Transfer Reports</field>
+        <field name="res_model">stock.transfer.report</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_stock_transfer_report_list"/>
     </record>
 
     <!-- MENU -->
-    <menuitem id="menu_project_material_consumption_root" name="Project Material Consumption"/>
-    <menuitem id="menu_project_material_consumption_main" name="Project Materials" parent="menu_project_material_consumption_root" action="action_project_material_consumption"/>
+    <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports"/>
+    <menuitem id="menu_stock_transfer_report_main" name="Reports" parent="menu_stock_transfer_report_root" action="action_stock_transfer_report"/>
 </odoo>
