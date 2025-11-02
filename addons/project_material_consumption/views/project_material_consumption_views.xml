@@ -65,4 +65,15 @@
             </form>
         </field>
     </record>
+
+    <!-- ACTION -->
+    <record id="action_project_material_consumption" model="ir.actions.act_window">
+        <field name="name">Project Material Consumption</field>
+        <field name="res_model">project.material.consumption</field>
+        <field name="view_mode">form</field>
+    </record>
+
+    <!-- MENU -->
+    <menuitem id="menu_project_material_consumption_root" name="Project Material Consumption"/>
+    <menuitem id="menu_project_material_consumption_main" name="Project Materials" parent="menu_project_material_consumption_root" action="action_project_material_consumption"/>
 </odoo>
