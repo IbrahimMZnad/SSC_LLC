@@ -7,61 +7,6 @@
         <field name="arch" type="xml">
             <form string="Stock Transfer Report">
                 <sheet>
-<<<<<<< HEAD
-                    <!-- HEADER SECTION -->
-                    <group string="General Information" class="o_group_border">
-                        <group>
-                            <field name="name" class="o_field_bold"/>
-                            <field name="company_id"/>
-                        </group>
-                    </group>
-
-                    <!-- NOTEBOOK SECTION -->
-                    <notebook class="o_notebook_modern">
-                        <!-- PAGE 1: MATERIALS -->
-                        <page string="Materials">
-                            <!-- SPAN TITLE -->
-                            <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; font-size: 14pt; line-height: 1.8; padding: 8px 0; margin-bottom: 10px; color: #0B3D91;">
-                                MATERIALS DETAILS
-                            </div>
-
-                            <field name="line_ids" nolabel="1">
-                                <list editable="bottom" align="center" class="text-center">
-                                    <field name="item" width="250px" class="text-center" align="center"/>
-                                    <field name="unit" width="100px" class="text-center" align="center"/>
-                                    <field name="type_of_material" width="150px" class="text-center" align="center"/>
-                                    <field name="quantity_needed" width="100px" class="text-center" align="center"/>
-                                    <field name="quantity_consumed" width="100px" class="text-center" align="center" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field name="quantity_ordered" width="100px" class="text-center" align="center" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                    <field name="balance_to_order" width="100px" class="text-center" align="center"/>
-                                    <field name="balance_to_use" width="100px" class="text-center" align="center"/>
-                                    <field name="stock" width="100px" class="text-center" align="center"/>
-                                </list>
-                            </field>
-                        </page>
-
-                        <!-- PAGE 2: BOQ LINES -->
-                        <page string="BOQ Lines">
-                            <!-- SPAN TITLE -->
-                            <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; font-size: 14pt; line-height: 1.8; padding: 8px 0; margin-bottom: 10px; color: #0B3D91;">
-                                BOQ LINES DETAILS
-                            </div>
-
-                            <field name="boq_line_ids" nolabel="1">
-                                <list editable="bottom" align="center" class="text-center">
-                                    <field name="item" width="250px" class="text-center" align="center"/>
-                                    <field name="unit" width="100px" class="text-center" align="center"/>
-                                    <field name="type_of_material" width="150px" class="text-center" align="center"/>
-                                    <field name="quantity_needed" width="100px" class="text-center" align="center"/>
-                                    <field name="quantity_consumed" width="100px" class="text-center" align="center" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field name="quantity_ordered" width="100px" class="text-center" align="center" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                    <field name="balance_to_order" width="100px" class="text-center" align="center"/>
-                                    <field name="balance_to_use" width="100px" class="text-center" align="center"/>
-                                    <field name="stock" width="100px" class="text-center" align="center"/>
-                                </list>
-=======
                     <!-- Header Fields -->
                     <group>
                         <field name="from_store"/>
@@ -114,7 +59,6 @@
                                         <field name="notes"/>
                                     </group>
                                 </form>
->>>>>>> my_devbranch
                             </field>
                         </page>
                     </notebook>
@@ -123,8 +67,6 @@
         </field>
     </record>
 
-<<<<<<< HEAD
-=======
     <!-- LIST VIEW -->
     <record id="view_stock_transfer_report_list" model="ir.ui.view">
         <field name="name">stock.transfer.report.list</field>
@@ -139,7 +81,6 @@
         </field>
     </record>
 
->>>>>>> my_devbranch
     <!-- ACTION -->
     <record id="action_stock_transfer_report" model="ir.actions.act_window">
         <field name="name">Stock Transfer Reports</field>
