@@ -14,12 +14,10 @@
                     </group>
                     <notebook>
                         <page string="Outgoing Lines">
-                            <field name="outgoing_lines" mode="form" 
-                                   context="{'form_view_ref':'stock_transfer_report.view_stock_transfer_line_outgoing_form'}"/>
+                            <field name="outgoing_lines"/>
                         </page>
                         <page string="Incoming Lines">
-                            <field name="incoming_lines" mode="form" 
-                                   context="{'form_view_ref':'stock_transfer_report.view_stock_transfer_line_incoming_form'}"/>
+                            <field name="incoming_lines"/>
                         </page>
                     </notebook>
                     <footer>
@@ -44,12 +42,12 @@
         </field>
     </record>
 
-    <!-- Outgoing Lines Views -->
-    <record id="view_stock_transfer_line_outgoing_form" model="ir.ui.view">
-        <field name="name">stock.transfer.line.outgoing.form</field>
+    <!-- Lines Form View -->
+    <record id="view_stock_transfer_line_form" model="ir.ui.view">
+        <field name="name">stock.transfer.line.form</field>
         <field name="model">stock.transfer.line</field>
         <field name="arch" type="xml">
-            <form string="Outgoing Line">
+            <form string="Stock Transfer Line">
                 <sheet>
                     <group>
                         <field name="description"/>
@@ -61,56 +59,6 @@
                     </group>
                 </sheet>
             </form>
-        </field>
-    </record>
-
-    <record id="view_stock_transfer_line_outgoing_list" model="ir.ui.view">
-        <field name="name">stock.transfer.line.outgoing.list</field>
-        <field name="model">stock.transfer.line</field>
-        <field name="arch" type="xml">
-            <list string="Outgoing Lines">
-                <field name="description"/>
-                <field name="item"/>
-                <field name="item_serial_no"/>
-                <field name="unit"/>
-                <field name="type_of_material"/>
-                <field name="date"/>
-            </list>
-        </field>
-    </record>
-
-    <!-- Incoming Lines Views -->
-    <record id="view_stock_transfer_line_incoming_form" model="ir.ui.view">
-        <field name="name">stock.transfer.line.incoming.form</field>
-        <field name="model">stock.transfer.line</field>
-        <field name="arch" type="xml">
-            <form string="Incoming Line">
-                <sheet>
-                    <group>
-                        <field name="description"/>
-                        <field name="item"/>
-                        <field name="item_serial_no"/>
-                        <field name="unit"/>
-                        <field name="type_of_material"/>
-                        <field name="date"/>
-                    </group>
-                </sheet>
-            </form>
-        </field>
-    </record>
-
-    <record id="view_stock_transfer_line_incoming_list" model="ir.ui.view">
-        <field name="name">stock.transfer.line.incoming.list</field>
-        <field name="model">stock.transfer.line</field>
-        <field name="arch" type="xml">
-            <list string="Incoming Lines">
-                <field name="description"/>
-                <field name="item"/>
-                <field name="item_serial_no"/>
-                <field name="unit"/>
-                <field name="type_of_material"/>
-                <field name="date"/>
-            </list>
         </field>
     </record>
 
@@ -123,8 +71,4 @@
             (0,0,{'view_mode':'list','view_id':ref('view_stock_transfer_report_list')}),
             (0,0,{'view_mode':'form','view_id':ref('view_stock_transfer_report_form')})]"/>
     </record>
-
-    <!-- Menu -->
-    <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports" sequence="10"/>
-    <menuitem id="menu_stock_transfer_report" name="Reports" parent="menu_stock_transfer_report_root" action="action_stock_transfer_report"/>
 </odoo>
