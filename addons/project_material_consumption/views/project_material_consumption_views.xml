@@ -20,15 +20,21 @@
                             <field name="line_ids">
                                 <form>
                                     <group>
-                                        <field name="item"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="quantity_needed"/>
-                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                        <field name="balance_to_order"/>
-                                        <field name="balance_to_use"/>
-                                        <field name="stock"/>
+                                        <group col="3">
+                                            <field name="item"/>
+                                            <field name="unit"/>
+                                            <field name="type_of_material"/>
+                                        </group>
+                                        <group col="3">
+                                            <field name="quantity_needed"/>
+                                            <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
+                                            <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                        </group>
+                                        <group col="3">
+                                            <field name="balance_to_order"/>
+                                            <field name="balance_to_use"/>
+                                            <field name="stock"/>
+                                        </group>
                                     </group>
                                 </form>
                             </field>
@@ -39,15 +45,21 @@
                             <field name="boq_line_ids">
                                 <form>
                                     <group>
-                                        <field name="item"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="quantity_needed"/>
-                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                        <field name="balance_to_order"/>
-                                        <field name="balance_to_use"/>
-                                        <field name="stock"/>
+                                        <group col="3">
+                                            <field name="item"/>
+                                            <field name="unit"/>
+                                            <field name="type_of_material"/>
+                                        </group>
+                                        <group col="3">
+                                            <field name="quantity_needed"/>
+                                            <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
+                                            <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                        </group>
+                                        <group col="3">
+                                            <field name="balance_to_order"/>
+                                            <field name="balance_to_use"/>
+                                            <field name="stock"/>
+                                        </group>
                                     </group>
                                 </form>
                             </field>
@@ -63,10 +75,10 @@
         <field name="name">project.material.consumption.list</field>
         <field name="model">project.material.consumption</field>
         <field name="arch" type="xml">
-            <tree>
+            <list>
                 <field name="name"/>
                 <field name="company_id"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -74,7 +86,7 @@
     <record id="action_project_material_consumption" model="ir.actions.act_window">
         <field name="name">Project Material Consumption</field>
         <field name="res_model">project.material.consumption</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- MENU -->
