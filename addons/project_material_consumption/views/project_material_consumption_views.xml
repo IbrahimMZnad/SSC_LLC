@@ -8,107 +8,46 @@
             <form string="Project Material Consumption">
                 <sheet>
                     <!-- Header Section -->
-                    <group name="header_info" col="2" style="margin-bottom: 10px;">
-                        <group>
-                            <field name="name"/>
-                        </group>
-                        <group>
-                            <field name="company_id"/>
-                        </group>
+                    <group>
+                        <field name="name"/>
+                        <field name="company_id"/>
                     </group>
 
                     <!-- Notebook Section -->
                     <notebook>
-
                         <!-- PAGE 1: MATERIALS -->
-                        <page string="Materials" name="materials_page">
-                            <separator string="Materials Movement Overview" colspan="2"/>
-                            <div class="alert alert-info" style="background-color:#eef6fb; border-left:4px solid #3498db; padding:10px; border-radius:6px; margin-bottom:15px;">
-                                <span style="font-size:14px; color:#2c3e50;">
-                                    <i class="fa fa-info-circle" style="color:#3498db; margin-right:5px;"></i>
-                                    <b>Project Material Movements:</b> This section lists all materials that have had <b>movements</b> within the project — such as materials that were <b>requested</b>, <b>consumed</b>, or <b>transferred</b>. Each line represents a material involved in an operation.
-                                </span>
-                            </div>
-
-                            <field name="line_ids" nolabel="1">
-                                <tree editable="bottom">
-                                    <field name="item"/>
-                                    <field name="unit"/>
-                                    <field name="type_of_material"/>
-                                    <field name="quantity_needed"/>
-                                    <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                    <field name="balance_to_order"/>
-                                    <field name="balance_to_use"/>
-                                    <field name="stock"/>
-                                </tree>
-
-                                <form string="Material Details">
-                                    <group col="4">
-                                        <group string="Material Info" colspan="2">
-                                            <field name="item"/>
-                                            <field name="unit"/>
-                                            <field name="type_of_material"/>
-                                        </group>
-
-                                        <group string="Quantities" colspan="2">
-                                            <field name="quantity_needed"/>
-                                            <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                            <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                        </group>
-
-                                        <group string="Balance & Stock" colspan="2">
-                                            <field name="balance_to_order"/>
-                                            <field name="balance_to_use"/>
-                                            <field name="stock"/>
-                                        </group>
+                        <page string="Materials">
+                            <field name="line_ids">
+                                <form>
+                                    <group>
+                                        <field name="item"/>
+                                        <field name="unit"/>
+                                        <field name="type_of_material"/>
+                                        <field name="quantity_needed"/>
+                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
+                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                        <field name="balance_to_order"/>
+                                        <field name="balance_to_use"/>
+                                        <field name="stock"/>
                                     </group>
                                 </form>
                             </field>
                         </page>
 
                         <!-- PAGE 2: BOQ LINES -->
-                        <page string="BOQ Lines" name="boq_page">
-                            <separator string="BOQ Materials Overview" colspan="2"/>
-                            <div class="alert alert-warning" style="background-color:#fff7e6; border-left:4px solid #f39c12; padding:10px; border-radius:6px; margin-bottom:15px;">
-                                <span style="font-size:14px; color:#7f6b2f;">
-                                    <i class="fa fa-list-alt" style="color:#f39c12; margin-right:5px;"></i>
-                                    <b>BOQ Related Materials:</b> This section displays materials that belong to the project’s <b>Bill of Quantities (BOQ)</b>. It provides visibility on <b>each BOQ material</b> and its associated movement activities within the project.
-                                </span>
-                            </div>
-
-                            <field name="boq_line_ids" nolabel="1">
-                                <tree editable="bottom">
-                                    <field name="item"/>
-                                    <field name="unit"/>
-                                    <field name="type_of_material"/>
-                                    <field name="quantity_needed"/>
-                                    <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                    <field name="balance_to_order"/>
-                                    <field name="balance_to_use"/>
-                                    <field name="stock"/>
-                                </tree>
-
-                                <form string="BOQ Material Details">
-                                    <group col="4">
-                                        <group string="Material Info" colspan="2">
-                                            <field name="item"/>
-                                            <field name="unit"/>
-                                            <field name="type_of_material"/>
-                                        </group>
-
-                                        <group string="Quantities" colspan="2">
-                                            <field name="quantity_needed"/>
-                                            <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                            <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                        </group>
-
-                                        <group string="Balance & Stock" colspan="2">
-                                            <field name="balance_to_order"/>
-                                            <field name="balance_to_use"/>
-                                            <field name="stock"/>
-                                        </group>
+                        <page string="BOQ Lines">
+                            <field name="boq_line_ids">
+                                <form>
+                                    <group>
+                                        <field name="item"/>
+                                        <field name="unit"/>
+                                        <field name="type_of_material"/>
+                                        <field name="quantity_needed"/>
+                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
+                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                        <field name="balance_to_order"/>
+                                        <field name="balance_to_use"/>
+                                        <field name="stock"/>
                                     </group>
                                 </form>
                             </field>
@@ -124,8 +63,8 @@
         <field name="name">project.material.consumption.list</field>
         <field name="model">project.material.consumption</field>
         <field name="arch" type="xml">
-            <tree string="Project Material Consumption" create="true" edit="true">
-                <field name="name" string="Project Name"/>
+            <tree>
+                <field name="name"/>
                 <field name="company_id"/>
             </tree>
         </field>
