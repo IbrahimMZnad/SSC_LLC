@@ -14,10 +14,12 @@
                     </group>
                     <notebook>
                         <page string="Outgoing Lines">
-                            <field name="outgoing_lines" mode="tree,form"/>
+                            <field name="outgoing_lines" mode="form" 
+                                   context="{'form_view_ref':'stock_transfer_report.view_stock_transfer_line_outgoing_form'}"/>
                         </page>
                         <page string="Incoming Lines">
-                            <field name="incoming_lines" mode="tree,form"/>
+                            <field name="incoming_lines" mode="form" 
+                                   context="{'form_view_ref':'stock_transfer_report.view_stock_transfer_line_incoming_form'}"/>
                         </page>
                     </notebook>
                     <footer>
@@ -33,12 +35,82 @@
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <tree string="Stock Transfer Reports">
+            <list string="Stock Transfer Reports">
                 <field name="from_store"/>
                 <field name="company_from"/>
                 <field name="to_store"/>
                 <field name="company_to"/>
-            </tree>
+            </list>
+        </field>
+    </record>
+
+    <!-- Outgoing Lines Views -->
+    <record id="view_stock_transfer_line_outgoing_form" model="ir.ui.view">
+        <field name="name">stock.transfer.line.outgoing.form</field>
+        <field name="model">stock.transfer.line</field>
+        <field name="arch" type="xml">
+            <form string="Outgoing Line">
+                <sheet>
+                    <group>
+                        <field name="description"/>
+                        <field name="item"/>
+                        <field name="item_serial_no"/>
+                        <field name="unit"/>
+                        <field name="type_of_material"/>
+                        <field name="date"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_stock_transfer_line_outgoing_list" model="ir.ui.view">
+        <field name="name">stock.transfer.line.outgoing.list</field>
+        <field name="model">stock.transfer.line</field>
+        <field name="arch" type="xml">
+            <list string="Outgoing Lines">
+                <field name="description"/>
+                <field name="item"/>
+                <field name="item_serial_no"/>
+                <field name="unit"/>
+                <field name="type_of_material"/>
+                <field name="date"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Incoming Lines Views -->
+    <record id="view_stock_transfer_line_incoming_form" model="ir.ui.view">
+        <field name="name">stock.transfer.line.incoming.form</field>
+        <field name="model">stock.transfer.line</field>
+        <field name="arch" type="xml">
+            <form string="Incoming Line">
+                <sheet>
+                    <group>
+                        <field name="description"/>
+                        <field name="item"/>
+                        <field name="item_serial_no"/>
+                        <field name="unit"/>
+                        <field name="type_of_material"/>
+                        <field name="date"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_stock_transfer_line_incoming_list" model="ir.ui.view">
+        <field name="name">stock.transfer.line.incoming.list</field>
+        <field name="model">stock.transfer.line</field>
+        <field name="arch" type="xml">
+            <list string="Incoming Lines">
+                <field name="description"/>
+                <field name="item"/>
+                <field name="item_serial_no"/>
+                <field name="unit"/>
+                <field name="type_of_material"/>
+                <field name="date"/>
+            </list>
         </field>
     </record>
 
@@ -48,8 +120,8 @@
         <field name="res_model">stock.transfer.report</field>
         <field name="view_mode">list,form</field>
         <field name="view_ids" eval="[(5,0,0),
-                                       (0,0,{'view_mode':'list','view_id':ref('view_stock_transfer_report_list')}),
-                                       (0,0,{'view_mode':'form','view_id':ref('view_stock_transfer_report_form')})]"/>
+            (0,0,{'view_mode':'list','view_id':ref('view_stock_transfer_report_list')}),
+            (0,0,{'view_mode':'form','view_id':ref('view_stock_transfer_report_form')})]"/>
     </record>
 
     <!-- Menu -->
