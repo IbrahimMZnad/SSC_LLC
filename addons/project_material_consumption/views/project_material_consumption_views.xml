@@ -95,7 +95,7 @@
     <record id="action_project_material_consumption" model="ir.actions.act_window">
         <field name="name">Project Material Consumption</field>
         <field name="res_model">project.material.consumption</field>
-        <field name="view_mode">form,tree</field>
+        <field name="view_mode">form</field>
     </record>
 
     <!-- MENU -->
