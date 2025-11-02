@@ -1,4 +1,37 @@
 <odoo>
+    <!-- Tree view for outgoing_lines -->
+    <record id="view_stock_transfer_line_outgoing_tree" model="ir.ui.view">
+        <field name="name">stock.transfer.line.outgoing.tree</field>
+        <field name="model">stock.transfer.line</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="description"/>
+                <field name="item"/>
+                <field name="item_serial_no"/>
+                <field name="unit"/>
+                <field name="type_of_material"/>
+                <field name="date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Tree view for incoming_lines -->
+    <record id="view_stock_transfer_line_incoming_tree" model="ir.ui.view">
+        <field name="name">stock.transfer.line.incoming.tree</field>
+        <field name="model">stock.transfer.line</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="description"/>
+                <field name="item"/>
+                <field name="item_serial_no"/>
+                <field name="unit"/>
+                <field name="type_of_material"/>
+                <field name="date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form view -->
     <record id="view_stock_transfer_report_form" model="ir.ui.view">
         <field name="name">stock.transfer.report.form</field>
         <field name="model">stock.transfer.report</field>
@@ -13,35 +46,12 @@
                     </group>
                     <notebook>
                         <page string="Outgoing Lines">
-                            <field name="outgoing_lines">
-                                <form>
-                                    <group>
-                                        <field name="description"/>
-                                        <field name="item"/>
-                                        <field name="item_serial_no"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="date"/>
-                                    </group>
-                                </form>
-                            </field>
+                            <field name="outgoing_lines" mode="tree,form"/>
                         </page>
                         <page string="Incoming Lines">
-                            <field name="incoming_lines">
-                                <form>
-                                    <group>
-                                        <field name="description"/>
-                                        <field name="item"/>
-                                        <field name="item_serial_no"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="date"/>
-                                    </group>
-                                </form>
-                            </field>
+                            <field name="incoming_lines" mode="tree,form"/>
                         </page>
                     </notebook>
-
                     <footer>
                         <button name="action_fetch_transactions" type="object" string="Fetch Transactions" class="btn-primary"/>
                     </footer>
@@ -50,12 +60,14 @@
         </field>
     </record>
 
+    <!-- Action -->
     <record id="action_stock_transfer_report" model="ir.actions.act_window">
         <field name="name">Stock Transfer Reports</field>
         <field name="res_model">stock.transfer.report</field>
-        <field name="view_mode">form</field>
+        <field name="view_mode">form,tree"/>
     </record>
 
+    <!-- Menu -->
     <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports" sequence="10"/>
     <menuitem id="menu_stock_transfer_report" name="Reports" parent="menu_stock_transfer_report_root" action="action_stock_transfer_report"/>
 </odoo>
