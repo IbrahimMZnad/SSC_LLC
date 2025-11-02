@@ -26,7 +26,7 @@
                             <div class="alert alert-info" style="background-color:#eef6fb; border-left:4px solid #3498db; padding:10px; border-radius:6px; margin-bottom:15px;">
                                 <span style="font-size:14px; color:#2c3e50;">
                                     <i class="fa fa-info-circle" style="color:#3498db; margin-right:5px;"></i>
-                                    <b>Project Material Movements:</b> This section lists all materials that have had <b>movements</b> within the project &mdash; such as materials that were <b>requested</b>, <b>consumed</b>, or <b>transferred</b>. Each line represents a material involved in an operation.
+                                    <b>Project Material Movements:</b> This section lists all materials that have had <b>movements</b> within the project &#8212; such as materials that were <b>requested</b>, <b>consumed</b>, or <b>transferred</b>. Each line represents a material involved in an operation.
                                 </span>
                             </div>
 
