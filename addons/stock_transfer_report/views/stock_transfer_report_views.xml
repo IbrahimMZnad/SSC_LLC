@@ -1,5 +1,5 @@
 <odoo>
-    <!-- Stock Transfer Report Form -->
+    <!-- Form View -->
     <record id="view_stock_transfer_report_form" model="ir.ui.view">
         <field name="name">stock.transfer.report.form</field>
         <field name="model">stock.transfer.report</field>
@@ -14,16 +14,8 @@
                     </group>
                     <notebook>
                         <page string="Outgoing Lines">
-                            <field name="outgoing_lines" mode="tree,form">
-                                <tree>
-                                    <field name="description"/>
-                                    <field name="item"/>
-                                    <field name="item_serial_no"/>
-                                    <field name="unit"/>
-                                    <field name="type_of_material"/>
-                                    <field name="date"/>
-                                </tree>
-                                <form>
+                            <field name="outgoing_lines">
+                                <form string="Outgoing Line">
                                     <group>
                                         <field name="description"/>
                                         <field name="item"/>
@@ -32,29 +24,19 @@
                                         <field name="type_of_material"/>
                                         <field name="date"/>
                                     </group>
-                                    <!-- زر داخل الـ Form الخاص بالـ One2many -->
-                                    <footer>
-                                        <button name="action_fetch_transactions"
-                                                type="object"
-                                                string="🔄 Fetch Transactions"
-                                                class="btn-primary"
-                                                icon="fa-refresh"/>
-                                    </footer>
                                 </form>
                             </field>
+                            <!-- زر تحت الجدول -->
+                            <group>
+                                <button name="action_fetch_transactions"
+                                        string="🔄 Fetch Transactions"
+                                        type="object"
+                                        class="btn-primary"/>
+                            </group>
                         </page>
-
                         <page string="Incoming Lines">
-                            <field name="incoming_lines" mode="tree,form">
-                                <tree>
-                                    <field name="description"/>
-                                    <field name="item"/>
-                                    <field name="item_serial_no"/>
-                                    <field name="unit"/>
-                                    <field name="type_of_material"/>
-                                    <field name="date"/>
-                                </tree>
-                                <form>
+                            <field name="incoming_lines">
+                                <form string="Incoming Line">
                                     <group>
                                         <field name="description"/>
                                         <field name="item"/>
@@ -72,7 +54,7 @@
         </field>
     </record>
 
-    <!-- Stock Transfer Report List -->
+    <!-- List View -->
     <record id="view_stock_transfer_report_list" model="ir.ui.view">
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
@@ -91,14 +73,13 @@
         <field name="name">Stock Transfer Reports</field>
         <field name="res_model">stock.transfer.report</field>
         <field name="view_mode">list,form</field>
-        <field name="view_ids" eval="[(5,0,0),
+        <field name="view_ids" eval="[
             (0,0,{'view_mode':'list','view_id':ref('view_stock_transfer_report_list')}),
-            (0,0,{'view_mode':'form','view_id':ref('view_stock_transfer_report_form')})]"/>
+            (0,0,{'view_mode':'form','view_id':ref('view_stock_transfer_report_form')})
+        ]"/>
     </record>
 
     <!-- Menu -->
-    <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports" sequence="10"/>
-    <menuitem id="menu_stock_transfer_report" name="Reports"
-              parent="menu_stock_transfer_report_root"
-              action="action_stock_transfer_report"/>
+    <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports"/>
+    <menuitem id="menu_stock_transfer_report" name="Reports" parent="menu_stock_transfer_report_root" action="action_stock_transfer_report"/>
 </odoo>
