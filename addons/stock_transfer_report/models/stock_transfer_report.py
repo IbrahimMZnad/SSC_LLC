@@ -27,14 +27,14 @@ class StockTransferReport(models.Model):
                     # Outgoing Line
                     self.env['stock.transfer.line'].create({
                         'transfer_id': rec.id,
-                        'description': 'to ' + rec.to_store.name,
+                        'description': 'to ' + rec.to_store.x_name,
                         'item': line.x_studio_item.id,
                         'date': tx.x_studio_date_2,
                     })
                     # Incoming Line
                     self.env['stock.transfer.line'].create({
                         'transfer_id': rec.id,
-                        'description': 'from ' + rec.to_store.name,
+                        'description': 'from ' + rec.to_store.x_name,
                         'item': line.x_studio_item.id,
                         'date': tx.x_studio_date_2,
                     })
