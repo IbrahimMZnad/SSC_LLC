@@ -7,23 +7,25 @@
         <field name="arch" type="xml">
             <form string="Project Material Consumption">
                 <sheet>
-                    <!-- Header Section -->
-                    <group>
-                        <field name="name"/>
-                        <field name="company_id"/>
+                    <!-- HEADER SECTION -->
+                    <group string="General Information" class="o_group_border">
+                        <group>
+                            <field name="name" class="o_field_bold"/>
+                            <field name="company_id"/>
+                        </group>
                     </group>
 
-                    <!-- Notebook Section -->
-                    <notebook>
+                    <!-- NOTEBOOK SECTION -->
+                    <notebook class="o_notebook_modern">
                         <!-- PAGE 1: MATERIALS -->
                         <page string="Materials">
                             <!-- SPAN TITLE -->
                             <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
+                                 style="text-decoration: underline; font-weight: bold; font-size: 14pt; line-height: 1.8; padding: 8px 0; margin-bottom: 10px; color: #0B3D91;">
                                 MATERIALS DETAILS
                             </div>
 
-                            <field name="line_ids">
+                            <field name="line_ids" nolabel="1">
                                 <list editable="bottom" align="center" class="text-center">
                                     <field name="item" width="250px" class="text-center" align="center"/>
                                     <field name="unit" width="100px" class="text-center" align="center"/>
@@ -42,11 +44,11 @@
                         <page string="BOQ Lines">
                             <!-- SPAN TITLE -->
                             <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
+                                 style="text-decoration: underline; font-weight: bold; font-size: 14pt; line-height: 1.8; padding: 8px 0; margin-bottom: 10px; color: #0B3D91;">
                                 BOQ LINES DETAILS
                             </div>
 
-                            <field name="boq_line_ids">
+                            <field name="boq_line_ids" nolabel="1">
                                 <list editable="bottom" align="center" class="text-center">
                                     <field name="item" width="250px" class="text-center" align="center"/>
                                     <field name="unit" width="100px" class="text-center" align="center"/>
@@ -70,7 +72,7 @@
     <record id="action_project_material_consumption" model="ir.actions.act_window">
         <field name="name">Project Material Consumption</field>
         <field name="res_model">project.material.consumption</field>
-        <field name="view_mode">form</field>
+        <field name="view_mode">list,form</field>
     </record>
 
     <!-- MENU -->
