@@ -26,12 +26,12 @@
                             <div class="alert alert-info" style="background-color:#eef6fb; border-left:4px solid #3498db; padding:10px; border-radius:6px; margin-bottom:15px;">
                                 <span style="font-size:14px; color:#2c3e50;">
                                     <i class="fa fa-info-circle" style="color:#3498db; margin-right:5px;"></i>
-                                    <b>Project Material Movements:</b> This section lists all materials that have had <b>movements</b> within the project &#8212; such as materials that were <b>requested</b>, <b>consumed</b>, or <b>transferred</b>. Each line represents a material involved in an operation.
+                                    <b>Project Material Movements:</b> This section lists all materials that have had <b>movements</b> within the project — such as materials that were <b>requested</b>, <b>consumed</b>, or <b>transferred</b>. Each line represents a material involved in an operation.
                                 </span>
                             </div>
 
                             <field name="line_ids" nolabel="1">
-                                <list editable="bottom">
+                                <tree editable="bottom">
                                     <field name="item"/>
                                     <field name="unit"/>
                                     <field name="type_of_material"/>
@@ -41,7 +41,7 @@
                                     <field name="balance_to_order"/>
                                     <field name="balance_to_use"/>
                                     <field name="stock"/>
-                                </list>
+                                </tree>
 
                                 <form string="Material Details">
                                     <group col="4">
@@ -73,12 +73,12 @@
                             <div class="alert alert-warning" style="background-color:#fff7e6; border-left:4px solid #f39c12; padding:10px; border-radius:6px; margin-bottom:15px;">
                                 <span style="font-size:14px; color:#7f6b2f;">
                                     <i class="fa fa-list-alt" style="color:#f39c12; margin-right:5px;"></i>
-                                    <b>BOQ Related Materials:</b> This section displays materials that belong to the project&#8217;s <b>Bill of Quantities (BOQ)</b>. It provides visibility on <b>each BOQ material</b> and its associated movement activities within the project.
+                                    <b>BOQ Related Materials:</b> This section displays materials that belong to the project’s <b>Bill of Quantities (BOQ)</b>. It provides visibility on <b>each BOQ material</b> and its associated movement activities within the project.
                                 </span>
                             </div>
 
                             <field name="boq_line_ids" nolabel="1">
-                                <list editable="bottom">
+                                <tree editable="bottom">
                                     <field name="item"/>
                                     <field name="unit"/>
                                     <field name="type_of_material"/>
@@ -88,7 +88,7 @@
                                     <field name="balance_to_order"/>
                                     <field name="balance_to_use"/>
                                     <field name="stock"/>
-                                </list>
+                                </tree>
 
                                 <form string="BOQ Material Details">
                                     <group col="4">
@@ -124,10 +124,10 @@
         <field name="name">project.material.consumption.list</field>
         <field name="model">project.material.consumption</field>
         <field name="arch" type="xml">
-            <list string="Project Material Consumption" create="true" edit="true">
+            <tree string="Project Material Consumption" create="true" edit="true">
                 <field name="name" string="Project Name"/>
                 <field name="company_id"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -135,7 +135,7 @@
     <record id="action_project_material_consumption" model="ir.actions.act_window">
         <field name="name">Project Material Consumption</field>
         <field name="res_model">project.material.consumption</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
     </record>
 
     <!-- MENU -->
