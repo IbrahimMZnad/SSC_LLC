@@ -1,6 +1,6 @@
 <odoo>
     <record id="view_stock_transfer_report_form" model="ir.ui.view">
-        <field name="name">stock.transfer.report.form</field>
+        <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
             <form string="Stock Transfer Report">
@@ -14,14 +14,6 @@
                     <notebook>
                         <page string="Outgoing Lines">
                             <field name="outgoing_lines">
-                                <list>
-                                    <field name="description"/>
-                                    <field name="item"/>
-                                    <field name="item_serial_no"/>
-                                    <field name="unit"/>
-                                    <field name="type_of_material"/>
-                                    <field name="date"/>
-                                </list>
                                 <form>
                                     <group>
                                         <field name="description"/>
@@ -36,14 +28,6 @@
                         </page>
                         <page string="Incoming Lines">
                             <field name="incoming_lines">
-                                <list>
-                                    <field name="description"/>
-                                    <field name="item"/>
-                                    <field name="item_serial_no"/>
-                                    <field name="unit"/>
-                                    <field name="type_of_material"/>
-                                    <field name="date"/>
-                                </list>
                                 <form>
                                     <group>
                                         <field name="description"/>
@@ -57,21 +41,14 @@
                             </field>
                         </page>
                     </notebook>
+
+                    <!-- زر Fetch Transactions أسفل الفورم -->
+                    <footer>
+                        <button name="action_fetch_transactions" type="object" string="Fetch Transactions" class="btn-primary"/>
+                    </footer>
+
                 </sheet>
             </form>
-        </field>
-    </record>
-
-    <record id="view_stock_transfer_report_tree" model="ir.ui.view">
-        <field name="name">stock.transfer.report.list</field>
-        <field name="model">stock.transfer.report</field>
-        <field name="arch" type="xml">
-            <list>
-                <field name="from_store"/>
-                <field name="to_store"/>
-                <field name="company_from"/>
-                <field name="company_to"/>
-            </list>
         </field>
     </record>
 
