@@ -71,4 +71,8 @@
             (0,0,{'view_mode':'list','view_id':ref('view_stock_transfer_report_list')}),
             (0,0,{'view_mode':'form','view_id':ref('view_stock_transfer_report_form')})]"/>
     </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports" sequence="10"/>
+    <menuitem id="menu_stock_transfer_report" name="Reports" parent="menu_stock_transfer_report_root" action="action_stock_transfer_report"/>
 </odoo>
