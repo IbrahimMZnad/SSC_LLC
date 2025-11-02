@@ -7,21 +7,35 @@
         <field name="arch" type="xml">
             <form string="Project Material Consumption">
                 <sheet>
+                    <!-- Header Fields -->
                     <group>
                         <field name="name"/>
                         <field name="company_id"/>
                     </group>
+
+                    <!-- Buttons (يمكن إضافة زر حساب أو Fetch هنا إذا لزم) -->
+                    <!--
+                    <group>
+                        <button name="action_compute_materials"
+                                string="Compute Materials"
+                                type="object"
+                                class="btn-primary"/>
+                    </group>
+                    -->
+
+                    <!-- Notebook Pages -->
                     <notebook>
+                        <!-- Materials Page -->
                         <page string="Materials">
                             <field name="line_ids">
-                                <form>
+                                <form string="Material Line">
                                     <group>
                                         <field name="item"/>
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
                                         <field name="quantity_needed"/>
-                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed','=',0)]}"/>
+                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered','=',0)]}"/>
                                         <field name="balance_to_order"/>
                                         <field name="balance_to_use"/>
                                         <field name="stock"/>
@@ -29,16 +43,18 @@
                                 </form>
                             </field>
                         </page>
+
+                        <!-- BOQ Lines Page -->
                         <page string="BOQ Lines">
                             <field name="boq_line_ids">
-                                <form>
+                                <form string="BOQ Line">
                                     <group>
                                         <field name="item"/>
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
                                         <field name="quantity_needed"/>
-                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                        <field name="quantity_consumed" attrs="{'invisible': [('quantity_consumed','=',0)]}"/>
+                                        <field name="quantity_ordered" attrs="{'invisible': [('quantity_ordered','=',0)]}"/>
                                         <field name="balance_to_order"/>
                                         <field name="balance_to_use"/>
                                         <field name="stock"/>
@@ -57,18 +73,19 @@
         <field name="name">project.material.consumption.list</field>
         <field name="model">project.material.consumption</field>
         <field name="arch" type="xml">
-            <list>
+            <tree string="Project Material Consumption">
                 <field name="name"/>
                 <field name="company_id"/>
-            </list>
+            </tree>
         </field>
     </record>
 
-    <!-- ACTION -->
+    <!-- ACTION WINDOW -->
     <record id="action_project_material_consumption" model="ir.actions.act_window">
         <field name="name">Project Material Consumption</field>
         <field name="res_model">project.material.consumption</field>
-        <field name="view_mode">list,form</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_project_material_consumption_list"/>
     </record>
 
     <!-- MENU -->
