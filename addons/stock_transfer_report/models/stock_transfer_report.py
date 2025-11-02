@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields
+from odoo import models, fields, api
 
 class StockTransferReport(models.Model):
     _name = 'stock.transfer.report'

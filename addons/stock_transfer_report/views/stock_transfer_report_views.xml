@@ -12,6 +12,16 @@
                         <field name="to_store"/>
                         <field name="company_to"/>
                     </group>
+
+                    <!-- زر Fetch Transactions فوق النوتبوك -->
+                    <group>
+                        <button name="action_fetch_transactions"
+                                string="🔄 Fetch Transactions"
+                                type="object"
+                                class="btn-primary"
+                                icon="fa-refresh"/>
+                    </group>
+
                     <notebook>
                         <page string="Outgoing Lines">
                             <field name="outgoing_lines">
@@ -26,14 +36,8 @@
                                     </group>
                                 </form>
                             </field>
-                            <!-- زر تحت الجدول -->
-                            <group>
-                                <button name="action_fetch_transactions"
-                                        string="🔄 Fetch Transactions"
-                                        type="object"
-                                        class="btn-primary"/>
-                            </group>
                         </page>
+
                         <page string="Incoming Lines">
                             <field name="incoming_lines">
                                 <form string="Incoming Line">
@@ -59,27 +63,26 @@
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <list string="Stock Transfer Reports">
+            <tree string="Stock Transfer Reports">
                 <field name="from_store"/>
                 <field name="company_from"/>
                 <field name="to_store"/>
                 <field name="company_to"/>
-            </list>
+            </tree>
         </field>
     </record>
 
-    <!-- Action -->
+    <!-- Action Window -->
     <record id="action_stock_transfer_report" model="ir.actions.act_window">
         <field name="name">Stock Transfer Reports</field>
         <field name="res_model">stock.transfer.report</field>
         <field name="view_mode">list,form</field>
-        <field name="view_ids" eval="[
-            (0,0,{'view_mode':'list','view_id':ref('view_stock_transfer_report_list')}),
-            (0,0,{'view_mode':'form','view_id':ref('view_stock_transfer_report_form')})
-        ]"/>
+        <field name="view_id" ref="view_stock_transfer_report_list"/>
     </record>
 
     <!-- Menu -->
     <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports"/>
-    <menuitem id="menu_stock_transfer_report" name="Reports" parent="menu_stock_transfer_report_root" action="action_stock_transfer_report"/>
+    <menuitem id="menu_stock_transfer_report" name="Reports"
+              parent="menu_stock_transfer_report_root"
+              action="action_stock_transfer_report"/>
 </odoo>
