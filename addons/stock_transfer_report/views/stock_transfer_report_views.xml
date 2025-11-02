@@ -63,12 +63,12 @@
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <tree string="Stock Transfer Reports">
+            <list string="Stock Transfer Reports">
                 <field name="from_store"/>
                 <field name="company_from"/>
                 <field name="to_store"/>
                 <field name="company_to"/>
-            </tree>
+            </list>
         </field>
     </record>
 
