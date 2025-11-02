@@ -42,11 +42,9 @@
                         </page>
                     </notebook>
 
-                    <!-- زر Fetch Transactions أسفل الفورم -->
                     <footer>
                         <button name="action_fetch_transactions" type="object" string="Fetch Transactions" class="btn-primary"/>
                     </footer>
-
                 </sheet>
             </form>
         </field>
