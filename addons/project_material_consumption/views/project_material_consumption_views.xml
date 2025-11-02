@@ -73,7 +73,7 @@
                             <div class="alert alert-warning" style="background-color:#fff7e6; border-left:4px solid #f39c12; padding:10px; border-radius:6px; margin-bottom:15px;">
                                 <span style="font-size:14px; color:#7f6b2f;">
                                     <i class="fa fa-list-alt" style="color:#f39c12; margin-right:5px;"></i>
-                                    <b>BOQ Related Materials:</b> This section displays materials that belong to the project’s <b>Bill of Quantities (BOQ)</b>. It provides visibility on <b>each BOQ material</b> and its associated movement activities within the project.
+                                    <b>BOQ Related Materials:</b> This section displays materials that belong to the project&#8217;s <b>Bill of Quantities (BOQ)</b>. It provides visibility on <b>each BOQ material</b> and its associated movement activities within the project.
                                 </span>
                             </div>
 
