@@ -77,8 +77,6 @@
                 <field name="company_from"/>
                 <field name="to_store"/>
                 <field name="company_to"/>
-                <field name="create_date"/>
-                <field name="write_date"/>
             </list>
         </field>
     </record>
