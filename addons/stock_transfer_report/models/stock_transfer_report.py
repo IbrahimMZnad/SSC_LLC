@@ -39,6 +39,11 @@ class StockTransferReport(models.Model):
                         'date': tx.x_studio_date_2,
                     })
 
+    def action_fetch_transactions(self):
+        """Button action to fetch transactions and fill lines"""
+        self.fill_lines_from_transactions()
+        return True
+
 
 class StockTransferLine(models.Model):
     _name = 'stock.transfer.line'
