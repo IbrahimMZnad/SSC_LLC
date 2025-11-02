@@ -30,6 +30,8 @@ class StockTransferReport(models.Model):
                         'description': 'to ' + rec.to_store.x_name,
                         'item': line.x_studio_item.id,
                         'date': tx.x_studio_date_2,
+                        'quantity': line.x_studio_quantity,
+                        'notes': tx.x_studio_remarks_4,
                     })
                     # Incoming Line
                     self.env['stock.transfer.line'].create({
@@ -37,6 +39,8 @@ class StockTransferReport(models.Model):
                         'description': 'from ' + rec.to_store.x_name,
                         'item': line.x_studio_item.id,
                         'date': tx.x_studio_date_2,
+                        'quantity': line.x_studio_quantity,
+                        'notes': tx.x_studio_remarks_4,
                     })
 
     def action_fetch_transactions(self):
@@ -56,3 +60,5 @@ class StockTransferLine(models.Model):
     unit = fields.Char(string="Unit", related='item.x_studio_unit', store=True)
     type_of_material = fields.Many2one('x_type_of_material', string="Type Of Material", related='item.x_studio_type_of_material', store=True)
     date = fields.Datetime(string="Date")
+    quantity = fields.Float(string="Quantity")
+    notes = fields.Html(string="Notes")
