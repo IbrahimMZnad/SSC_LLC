@@ -1,5 +1,5 @@
 <odoo>
-    <!-- Form View -->
+    <!-- FORM VIEW -->
     <record id="view_stock_transfer_report_form" model="ir.ui.view">
         <field name="name">stock.transfer.report.form</field>
         <field name="model">stock.transfer.report</field>
@@ -23,8 +23,9 @@
                     </group>
 
                     <notebook>
+                        <!-- Outgoing Lines -->
                         <page string="Outgoing Lines">
-                            <field name="outgoing_lines">
+                            <field name="outgoing_lines" context="{'default_report_type':'outgoing'}">
                                 <form string="Outgoing Line">
                                     <group>
                                         <field name="description"/>
@@ -33,13 +34,16 @@
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
                                         <field name="date"/>
+                                        <field name="quantity"/>
+                                        <field name="notes"/>
                                     </group>
                                 </form>
                             </field>
                         </page>
 
+                        <!-- Incoming Lines -->
                         <page string="Incoming Lines">
-                            <field name="incoming_lines">
+                            <field name="incoming_lines" context="{'default_report_type':'incoming'}">
                                 <form string="Incoming Line">
                                     <group>
                                         <field name="description"/>
@@ -48,6 +52,8 @@
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
                                         <field name="date"/>
+                                        <field name="quantity"/>
+                                        <field name="notes"/>
                                     </group>
                                 </form>
                             </field>
@@ -58,7 +64,7 @@
         </field>
     </record>
 
-    <!-- List View -->
+    <!-- LIST VIEW -->
     <record id="view_stock_transfer_report_list" model="ir.ui.view">
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
@@ -68,11 +74,13 @@
                 <field name="company_from"/>
                 <field name="to_store"/>
                 <field name="company_to"/>
+                <field name="create_date"/>
+                <field name="write_date"/>
             </list>
         </field>
     </record>
 
-    <!-- Action Window -->
+    <!-- ACTION WINDOW -->
     <record id="action_stock_transfer_report" model="ir.actions.act_window">
         <field name="name">Stock Transfer Reports</field>
         <field name="res_model">stock.transfer.report</field>
@@ -80,7 +88,7 @@
         <field name="view_id" ref="view_stock_transfer_report_list"/>
     </record>
 
-    <!-- Menu -->
+    <!-- MENU -->
     <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports"/>
     <menuitem id="menu_stock_transfer_report" name="Reports"
               parent="menu_stock_transfer_report_root"
