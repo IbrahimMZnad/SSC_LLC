@@ -31,7 +31,7 @@
                             </div>
 
                             <field name="line_ids" nolabel="1">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="item"/>
                                     <field name="unit"/>
                                     <field name="type_of_material"/>
@@ -41,7 +41,7 @@
                                     <field name="balance_to_order"/>
                                     <field name="balance_to_use"/>
                                     <field name="stock"/>
-                                </tree>
+                                </list>
 
                                 <form string="Material Details">
                                     <group col="4">
@@ -78,7 +78,7 @@
                             </div>
 
                             <field name="boq_line_ids" nolabel="1">
-                                <tree editable="bottom">
+                                <list editable="bottom">
                                     <field name="item"/>
                                     <field name="unit"/>
                                     <field name="type_of_material"/>
@@ -88,7 +88,7 @@
                                     <field name="balance_to_order"/>
                                     <field name="balance_to_use"/>
                                     <field name="stock"/>
-                                </tree>
+                                </list>
 
                                 <form string="BOQ Material Details">
                                     <group col="4">
