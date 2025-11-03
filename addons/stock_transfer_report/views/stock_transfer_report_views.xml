@@ -83,7 +83,7 @@
         <record id="action_stock_transfer_report" model="ir.actions.act_window">
             <field name="name">Stock Transfer Report</field>
             <field name="res_model">stock.transfer.report</field>
-            <field name="view_mode">form,tree</field>
+            <field name="view_mode">form,list</field>
             <field name="view_id" ref="view_stock_transfer_report_form"/>
         </record>
 
