@@ -25,18 +25,9 @@
                     <!-- Notebook -->
                     <notebook>
                         <!-- OUTGOING LINES -->
-                        <page string="Outgoing Lines" style="background-color:#FCF3CF;">
+                        <page string="📤 Outgoing Lines" style="background-color:#FEF9E7;">
                             <group>
-                                <field name="outgoing_lines" nolabel="1" context="{'default_type':'outgoing'}">
-                                    <form string="Outgoing Line" create="false" edit="false">
-                                        <group col="4" style="background-color:#FEF9E7; border-radius:8px; padding:10px; margin-top:6px;">
-                                            <field name="description" readonly="1"/>
-                                            <field name="item" readonly="1"/>
-                                            <field name="date" readonly="1"/>
-                                            <field name="quantity" readonly="1"/>
-                                            <field name="notes" readonly="1"/>
-                                        </group>
-                                    </form>
+                                <field name="outgoing_lines" nolabel="1">
                                     <tree string="Outgoing Lines" decoration-muted="1" editable="false">
                                         <field name="description"/>
                                         <field name="item"/>
@@ -44,16 +35,8 @@
                                         <field name="quantity"/>
                                         <field name="notes"/>
                                     </tree>
-                                </field>
-                            </group>
-                        </page>
-
-                        <!-- INCOMING LINES -->
-                        <page string="Incoming Lines" style="background-color:#D6EAF8;">
-                            <group>
-                                <field name="incoming_lines" nolabel="1" context="{'default_type':'incoming'}">
-                                    <form string="Incoming Line" create="false" edit="false">
-                                        <group col="4" style="background-color:#EBF5FB; border-radius:8px; padding:10px; margin-top:6px;">
+                                    <form string="Outgoing Line" create="false" edit="false">
+                                        <group col="4" style="background-color:#FCF3CF; border-radius:8px; padding:10px; margin-top:6px;">
                                             <field name="description" readonly="1"/>
                                             <field name="item" readonly="1"/>
                                             <field name="date" readonly="1"/>
@@ -61,6 +44,14 @@
                                             <field name="notes" readonly="1"/>
                                         </group>
                                     </form>
+                                </field>
+                            </group>
+                        </page>
+
+                        <!-- INCOMING LINES -->
+                        <page string="📥 Incoming Lines" style="background-color:#EBF5FB;">
+                            <group>
+                                <field name="incoming_lines" nolabel="1">
                                     <tree string="Incoming Lines" decoration-muted="1" editable="false">
                                         <field name="description"/>
                                         <field name="item"/>
@@ -68,6 +59,15 @@
                                         <field name="quantity"/>
                                         <field name="notes"/>
                                     </tree>
+                                    <form string="Incoming Line" create="false" edit="false">
+                                        <group col="4" style="background-color:#D6EAF8; border-radius:8px; padding:10px; margin-top:6px;">
+                                            <field name="description" readonly="1"/>
+                                            <field name="item" readonly="1"/>
+                                            <field name="date" readonly="1"/>
+                                            <field name="quantity" readonly="1"/>
+                                            <field name="notes" readonly="1"/>
+                                        </group>
+                                    </form>
                                 </field>
                             </group>
                         </page>
