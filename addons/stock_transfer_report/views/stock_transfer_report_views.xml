@@ -5,90 +5,72 @@
         <field name="name">stock.transfer.report.form</field>
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <form string="Stock Transfer Report">
+            <form string="Stock Transfer Report" class="oe_background_grey">
                 <sheet>
-
-                    <!-- HEADER -->
-                    <div style="background-color:#1F618D; padding:14px; border-radius:12px; color:white; text-align:center; margin-bottom:20px;">
-                        <h2 style="margin:0;">📦 Stock Transfer Report</h2>
-                    </div>
-
-                    <!-- Store Info -->
-                    <group style="background-color:#F8F9F9; border-radius:10px; padding:15px; margin-bottom:15px;">
-                        <group>
-                            <field name="store" style="font-weight:bold;"/>
-                            <field name="company"/>
-                        </group>
+                    <!-- Header -->
+                    <group string="Report Information" col="2" style="background-color:#F4F6F7; padding:10px; border-radius:8px;">
+                        <field name="store" nolabel="0"/>
+                        <field name="company" nolabel="0"/>
                     </group>
 
                     <!-- Fetch Button -->
-                    <div class="text-center" style="margin-bottom:25px;">
+                    <group style="margin-top:15px; text-align:center;">
                         <button name="action_fetch_transactions"
                                 string="🔄 Fetch All Transactions"
                                 type="object"
-                                class="btn btn-primary"
-                                style="background-color:#2E86C1; color:white; font-weight:bold; border-radius:8px; padding:10px 25px;"/>
-                    </div>
+                                class="btn-primary"
+                                style="background-color:#2874A6; color:white; font-weight:bold; border-radius:6px; padding:8px 16px;"/>
+                    </group>
 
-                    <!-- NOTEBOOK -->
+                    <!-- Notebook -->
                     <notebook>
-
-                        <!-- OUTGOING -->
-                        <page string="📤 Outgoing Lines" style="background-color:#FEF5E7;">
+                        <!-- OUTGOING LINES -->
+                        <page string="Outgoing Lines" style="background-color:#FCF3CF;">
                             <group>
-                                <field name="outgoing_lines" nolabel="1">
-                                    <div style="display:grid; grid-template-columns: repeat(7, 1fr); background-color:#FADBD8; font-weight:bold; padding:8px; border-radius:8px; text-align:center;">
-                                        <span>Description</span>
-                                        <span>Item</span>
-                                        <span>Serial No.</span>
-                                        <span>Unit</span>
-                                        <span>Type</span>
-                                        <span>Date</span>
-                                        <span>Quantity</span>
-                                    </div>
-
-                                    <div t-foreach="record.outgoing_lines" t-as="line"
-                                         style="display:grid; grid-template-columns: repeat(7, 1fr); background-color:#FCF3CF; padding:8px; border-radius:8px; margin-top:5px; text-align:center;">
-                                        <span><t t-esc="line.description"/></span>
-                                        <span><t t-esc="line.item.display_name"/></span>
-                                        <span><t t-esc="line.item_serial_no"/></span>
-                                        <span><t t-esc="line.unit"/></span>
-                                        <span><t t-esc="line.type_of_material.display_name"/></span>
-                                        <span><t t-esc="line.date"/></span>
-                                        <span><t t-esc="line.quantity"/></span>
-                                    </div>
+                                <field name="outgoing_lines" nolabel="1" context="{'default_type':'outgoing'}">
+                                    <form string="Outgoing Line" create="false" edit="false">
+                                        <group col="4" style="background-color:#FEF9E7; border-radius:8px; padding:10px; margin-top:6px;">
+                                            <field name="description" readonly="1"/>
+                                            <field name="item" readonly="1"/>
+                                            <field name="date" readonly="1"/>
+                                            <field name="quantity" readonly="1"/>
+                                            <field name="notes" readonly="1"/>
+                                        </group>
+                                    </form>
+                                    <tree string="Outgoing Lines" decoration-muted="1" editable="false">
+                                        <field name="description"/>
+                                        <field name="item"/>
+                                        <field name="date"/>
+                                        <field name="quantity"/>
+                                        <field name="notes"/>
+                                    </tree>
                                 </field>
                             </group>
                         </page>
 
-                        <!-- INCOMING -->
-                        <page string="📥 Incoming Lines" style="background-color:#E8F8F5;">
+                        <!-- INCOMING LINES -->
+                        <page string="Incoming Lines" style="background-color:#D6EAF8;">
                             <group>
-                                <field name="incoming_lines" nolabel="1">
-                                    <div style="display:grid; grid-template-columns: repeat(7, 1fr); background-color:#ABEBC6; font-weight:bold; padding:8px; border-radius:8px; text-align:center;">
-                                        <span>Description</span>
-                                        <span>Item</span>
-                                        <span>Serial No.</span>
-                                        <span>Unit</span>
-                                        <span>Type</span>
-                                        <span>Date</span>
-                                        <span>Quantity</span>
-                                    </div>
-
-                                    <div t-foreach="record.incoming_lines" t-as="line"
-                                         style="display:grid; grid-template-columns: repeat(7, 1fr); background-color:#D1F2EB; padding:8px; border-radius:8px; margin-top:5px; text-align:center;">
-                                        <span><t t-esc="line.description"/></span>
-                                        <span><t t-esc="line.item.display_name"/></span>
-                                        <span><t t-esc="line.item_serial_no"/></span>
-                                        <span><t t-esc="line.unit"/></span>
-                                        <span><t t-esc="line.type_of_material.display_name"/></span>
-                                        <span><t t-esc="line.date"/></span>
-                                        <span><t t-esc="line.quantity"/></span>
-                                    </div>
+                                <field name="incoming_lines" nolabel="1" context="{'default_type':'incoming'}">
+                                    <form string="Incoming Line" create="false" edit="false">
+                                        <group col="4" style="background-color:#EBF5FB; border-radius:8px; padding:10px; margin-top:6px;">
+                                            <field name="description" readonly="1"/>
+                                            <field name="item" readonly="1"/>
+                                            <field name="date" readonly="1"/>
+                                            <field name="quantity" readonly="1"/>
+                                            <field name="notes" readonly="1"/>
+                                        </group>
+                                    </form>
+                                    <tree string="Incoming Lines" decoration-muted="1" editable="false">
+                                        <field name="description"/>
+                                        <field name="item"/>
+                                        <field name="date"/>
+                                        <field name="quantity"/>
+                                        <field name="notes"/>
+                                    </tree>
                                 </field>
                             </group>
                         </page>
-
                     </notebook>
                 </sheet>
             </form>
@@ -100,9 +82,9 @@
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <list string="Stock Transfer Reports" create="false" edit="false">
-                <field name="store" string="🏠 Store"/>
-                <field name="company" string="🏢 Company"/>
+            <list string="Stock Transfer Reports">
+                <field name="store"/>
+                <field name="company"/>
             </list>
         </field>
     </record>
