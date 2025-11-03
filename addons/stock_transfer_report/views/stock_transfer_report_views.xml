@@ -11,7 +11,6 @@
                     <sheet style="background-color:#f9fafb; padding:20px; border-radius:12px;">
                         <group>
                             <group>
-                                <field name="name" readonly="1" string="Report Name"/>
                                 <field name="date" readonly="1"/>
                             </group>
                             <group>
