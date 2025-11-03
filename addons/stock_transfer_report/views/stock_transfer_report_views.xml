@@ -9,8 +9,8 @@
                 <sheet>
                     <!-- Header Fields -->
                     <group>
-                        <field name="store"/>
-                        <field name="company"/>
+                        <field name="store" class="o_field_dark"/>
+                        <field name="company" class="o_field_dark"/>
                     </group>
 
                     <!-- Fetch Button -->
@@ -25,34 +25,38 @@
                     <!-- Notebook Pages -->
                     <notebook>
                         <!-- Outgoing Lines Page -->
-                        <page string="📤 Outgoing Lines" style="background-color:#FEF9E7; padding:5px;">
-                            <field name="outgoing_lines">
-                                <tree editable="false" decoration-muted="1">
-                                    <field name="description"/>
-                                    <field name="item"/>
-                                    <field name="item_serial_no"/>
-                                    <field name="unit"/>
-                                    <field name="type_of_material"/>
-                                    <field name="date"/>
-                                    <field name="quantity"/>
-                                    <field name="notes"/>
-                                </tree>
+                        <page string="Outgoing Lines" style="background-color:#FCF3CF; padding:10px; border-radius:8px;">
+                            <field name="outgoing_lines" nolabel="1" style="width:100%;">
+                                <form string="Outgoing Line" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; text-align:center; padding:5px;">
+                                    <group>
+                                        <field name="description" style="font-weight:bold;"/>
+                                        <field name="item"/>
+                                        <field name="item_serial_no"/>
+                                        <field name="unit"/>
+                                        <field name="type_of_material"/>
+                                        <field name="date"/>
+                                        <field name="quantity"/>
+                                        <field name="notes"/>
+                                    </group>
+                                </form>
                             </field>
                         </page>
 
                         <!-- Incoming Lines Page -->
-                        <page string="📥 Incoming Lines" style="background-color:#EBF5FB; padding:5px;">
-                            <field name="incoming_lines">
-                                <tree editable="false" decoration-muted="1">
-                                    <field name="description"/>
-                                    <field name="item"/>
-                                    <field name="item_serial_no"/>
-                                    <field name="unit"/>
-                                    <field name="type_of_material"/>
-                                    <field name="date"/>
-                                    <field name="quantity"/>
-                                    <field name="notes"/>
-                                </tree>
+                        <page string="Incoming Lines" style="background-color:#D6EAF8; padding:10px; border-radius:8px;">
+                            <field name="incoming_lines" nolabel="1" style="width:100%;">
+                                <form string="Incoming Line" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; text-align:center; padding:5px;">
+                                    <group>
+                                        <field name="description" style="font-weight:bold;"/>
+                                        <field name="item"/>
+                                        <field name="item_serial_no"/>
+                                        <field name="unit"/>
+                                        <field name="type_of_material"/>
+                                        <field name="date"/>
+                                        <field name="quantity"/>
+                                        <field name="notes"/>
+                                    </group>
+                                </form>
                             </field>
                         </page>
                     </notebook>
@@ -61,15 +65,15 @@
         </field>
     </record>
 
-    <!-- LIST VIEW -->
+    <!-- LIST VIEW for stock.transfer.report -->
     <record id="view_stock_transfer_report_list" model="ir.ui.view">
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <tree string="Stock Transfer Reports" decoration-muted="1">
+            <list string="Stock Transfer Reports">
                 <field name="store"/>
                 <field name="company"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -77,7 +81,7 @@
     <record id="action_stock_transfer_report" model="ir.actions.act_window">
         <field name="name">Stock Transfer Reports</field>
         <field name="res_model">stock.transfer.report</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="view_id" ref="view_stock_transfer_report_list"/>
     </record>
 
