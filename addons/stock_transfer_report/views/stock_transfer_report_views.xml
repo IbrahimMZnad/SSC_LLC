@@ -27,14 +27,14 @@
                         <page string="Outgoing Lines" style="background-color:#FFF3CD; padding:10px; border-radius:8px;">
                             <field name="outgoing_lines" nolabel="1" widget="sol_o2m">
                                 <list editable="bottom" create="false" delete="false" multi_edit="false">
-                                    <field optional="show" name="description" width="150" class="text-center" align="center"/>
+                                    <field optional="show" name="description" width="250" class="text-center" align="center"/>
                                     <field optional="show" name="item" width="150" class="text-center" align="center"/>
                                     <field optional="show" name="item_serial_no" width="120" class="text-center" align="center"/>
                                     <field optional="show" name="unit" width="100" class="text-center" align="center"/>
                                     <field optional="show" name="type_of_material" width="120" class="text-center" align="center"/>
-                                    <field optional="show" name="date" width="120" class="text-center" align="center"/>
+                                    <field optional="show" name="date" width="100" class="text-center" align="center"/>
                                     <field optional="show" name="quantity" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="notes" width="250" class="text-center" align="center"/>
+                                    <field optional="show" name="notes" width="150" class="text-center" align="center"/>
                                 </list>
                             </field>
                         </page>
@@ -43,14 +43,14 @@
                         <page string="Incoming Lines" style="background-color:#D6EAF8; padding:10px; border-radius:8px;">
                             <field name="incoming_lines" nolabel="1" widget="sol_o2m">
                                 <list editable="bottom" create="false" delete="false" multi_edit="false">
-                                    <field optional="show" name="description" width="150" class="text-center" align="center"/>
+                                    <field optional="show" name="description" width="250" class="text-center" align="center"/>
                                     <field optional="show" name="item" width="150" class="text-center" align="center"/>
                                     <field optional="show" name="item_serial_no" width="120" class="text-center" align="center"/>
                                     <field optional="show" name="unit" width="100" class="text-center" align="center"/>
                                     <field optional="show" name="type_of_material" width="120" class="text-center" align="center"/>
-                                    <field optional="show" name="date" width="120" class="text-center" align="center"/>
+                                    <field optional="show" name="date" width="100" class="text-center" align="center"/>
                                     <field optional="show" name="quantity" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="notes" width="250" class="text-center" align="center"/>
+                                    <field optional="show" name="notes" width="150" class="text-center" align="center"/>
                                 </list>
                             </field>
                         </page>
