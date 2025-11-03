@@ -1,32 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- FORM VIEW -->
-    <record id="view_stock_transfer_report_form" model="ir.ui.view">
-        <field name="name">stock.transfer.report.form</field>
-        <field name="model">stock.transfer.report</field>
+    <record id="view_project_material_consumption_form" model="ir.ui.view">
+        <field name="name">project.material.consumption.form</field>
+        <field name="model">project.material.consumption</field>
         <field name="arch" type="xml">
-            <form string="Stock Transfer Report">
+            <form string="Project Material Consumption">
                 <sheet>
-<<<<<<< HEAD
-                    <!-- HEADER SECTION -->
-                    <group string="General Information" class="o_group_border">
-                        <group>
-                            <field name="name" class="o_field_bold"/>
-                            <field name="company_id"/>
-                        </group>
+                    <!-- Header Section -->
+                    <group>
+                        <field name="name"/>
+                        <field name="company_id"/>
                     </group>
 
-                    <!-- NOTEBOOK SECTION -->
-                    <notebook class="o_notebook_modern">
+                    <!-- Notebook Section -->
+                    <notebook>
                         <!-- PAGE 1: MATERIALS -->
                         <page string="Materials">
                             <!-- SPAN TITLE -->
                             <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; font-size: 14pt; line-height: 1.8; padding: 8px 0; margin-bottom: 10px; color: #0B3D91;">
+                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
                                 MATERIALS DETAILS
                             </div>
 
-                            <field name="line_ids" nolabel="1">
+                            <field name="line_ids">
                                 <list editable="bottom" align="center" class="text-center">
                                     <field name="item" width="250px" class="text-center" align="center"/>
                                     <field name="unit" width="100px" class="text-center" align="center"/>
@@ -45,11 +42,11 @@
                         <page string="BOQ Lines">
                             <!-- SPAN TITLE -->
                             <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; font-size: 14pt; line-height: 1.8; padding: 8px 0; margin-bottom: 10px; color: #0B3D91;">
+                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
                                 BOQ LINES DETAILS
                             </div>
 
-                            <field name="boq_line_ids" nolabel="1">
+                            <field name="boq_line_ids">
                                 <list editable="bottom" align="center" class="text-center">
                                     <field name="item" width="250px" class="text-center" align="center"/>
                                     <field name="unit" width="100px" class="text-center" align="center"/>
@@ -61,60 +58,6 @@
                                     <field name="balance_to_use" width="100px" class="text-center" align="center"/>
                                     <field name="stock" width="100px" class="text-center" align="center"/>
                                 </list>
-=======
-                    <!-- Header Fields -->
-                    <group>
-                        <field name="from_store"/>
-                        <field name="company_from"/>
-                        <field name="to_store"/>
-                        <field name="company_to"/>
-                    </group>
-
-                    <!-- Fetch Button -->
-                    <group>
-                        <button name="action_fetch_transactions"
-                                string="🔄 Fetch Transactions"
-                                type="object"
-                                class="btn-primary"
-                                icon="fa-refresh"/>
-                    </group>
-
-                    <!-- Notebook Pages -->
-                    <notebook>
-                        <!-- Outgoing Lines Page -->
-                        <page string="Outgoing Lines">
-                            <field name="outgoing_lines" context="{'default_report_type': 'outgoing'}">
-                                <form string="Outgoing Line">
-                                    <group>
-                                        <field name="description"/>
-                                        <field name="item"/>
-                                        <field name="item_serial_no"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="date"/>
-                                        <field name="quantity"/>
-                                        <field name="notes"/>
-                                    </group>
-                                </form>
-                            </field>
-                        </page>
-
-                        <!-- Incoming Lines Page -->
-                        <page string="Incoming Lines">
-                            <field name="incoming_lines" context="{'default_report_type': 'incoming'}">
-                                <form string="Incoming Line">
-                                    <group>
-                                        <field name="description"/>
-                                        <field name="item"/>
-                                        <field name="item_serial_no"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="date"/>
-                                        <field name="quantity"/>
-                                        <field name="notes"/>
-                                    </group>
-                                </form>
->>>>>>> my_devbranch
                             </field>
                         </page>
                     </notebook>
@@ -123,32 +66,14 @@
         </field>
     </record>
 
-<<<<<<< HEAD
-=======
-    <!-- LIST VIEW -->
-    <record id="view_stock_transfer_report_list" model="ir.ui.view">
-        <field name="name">stock.transfer.report.list</field>
-        <field name="model">stock.transfer.report</field>
-        <field name="arch" type="xml">
-            <list string="Stock Transfer Reports">
-                <field name="from_store"/>
-                <field name="company_from"/>
-                <field name="to_store"/>
-                <field name="company_to"/>
-            </list>
-        </field>
-    </record>
-
->>>>>>> my_devbranch
     <!-- ACTION -->
-    <record id="action_stock_transfer_report" model="ir.actions.act_window">
-        <field name="name">Stock Transfer Reports</field>
-        <field name="res_model">stock.transfer.report</field>
+    <record id="action_project_material_consumption" model="ir.actions.act_window">
+        <field name="name">Project Material Consumption</field>
+        <field name="res_model">project.material.consumption</field>
         <field name="view_mode">list,form</field>
-        <field name="view_id" ref="view_stock_transfer_report_list"/>
     </record>
 
     <!-- MENU -->
-    <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer Reports"/>
-    <menuitem id="menu_stock_transfer_report_main" name="Reports" parent="menu_stock_transfer_report_root" action="action_stock_transfer_report"/>
+    <menuitem id="menu_project_material_consumption_root" name="Project Material Consumption"/>
+    <menuitem id="menu_project_material_consumption_main" name="Project Materials" parent="menu_project_material_consumption_root" action="action_project_material_consumption"/>
 </odoo>
