@@ -16,31 +16,28 @@
 
                     <!-- NOTEBOOK SECTION -->
                     <notebook>
-
                         <!-- PAGE 1: MATERIALS -->
-                        <page string="Materials" style="background-color:#ffffff; padding:20px;">
-                            <div class="o_field_widget text-center"
-                                 style="font-size:16px; font-weight:bold; text-decoration: underline; padding-bottom:10px;">
+                        <page string="Materials" style="background-color:#ffffff; padding:15px;">
+                            <!-- SPAN TITLE -->
+                            <div class="o_field_widget text-center" 
+                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
                                 MATERIALS DETAILS
                             </div>
 
                             <field name="line_ids" nolabel="1" widget="sol_o2m">
-                                <list editable="bottom" create="false" delete="false" multi_edit="false" class="text-center" style="border:1px solid #ccc;">
-                                    <field optional="show" name="item" width="250" class="text-center"/>
-                                    <field optional="show" name="unit" width="100" class="text-center"/>
-                                    <field optional="show" name="type_of_material" width="150" class="text-center"/>
-                                    <field optional="show" name="quantity_needed" width="100" class="text-center"/>
-                                    <field optional="show" name="quantity_consumed" width="100" class="text-center" 
-                                           attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field optional="show" name="quantity_ordered" width="100" class="text-center" 
-                                           attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                    <field optional="show" name="balance_to_order" width="100" class="text-center"/>
-                                    <field optional="show" name="balance_to_use" width="100" class="text-center"/>
-                                    <field optional="show" name="stock" width="100" class="text-center"/>
+                                <list editable="bottom" create="false" delete="false" multi_edit="false">
+                                    <field optional="show" name="item" width="250" class="text-center" align="center"/>
+                                    <field optional="show" name="unit" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="type_of_material" width="150" class="text-center" align="center"/>
+                                    <field optional="show" name="quantity_needed" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="quantity_consumed" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="quantity_ordered" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="balance_to_order" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="balance_to_use" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="stock" width="100" class="text-center" align="center"/>
                                 </list>
-
                                 <form>
-                                    <group string="Material Details" colspan="2">
+                                    <group>
                                         <field name="item"/>
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
@@ -56,29 +53,27 @@
                         </page>
 
                         <!-- PAGE 2: BOQ LINES -->
-                        <page string="BOQ Lines" style="background-color:#ffffff; padding:20px;">
-                            <div class="o_field_widget text-center"
-                                 style="font-size:16px; font-weight:bold; text-decoration: underline; padding-bottom:10px;">
+                        <page string="BOQ Lines" style="background-color:#ffffff; padding:15px;">
+                            <!-- SPAN TITLE -->
+                            <div class="o_field_widget text-center" 
+                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
                                 BOQ LINES DETAILS
                             </div>
 
                             <field name="boq_line_ids" nolabel="1" widget="sol_o2m">
-                                <list editable="bottom" create="false" delete="false" multi_edit="false" class="text-center" style="border:1px solid #ccc;">
-                                    <field optional="show" name="item" width="250" class="text-center"/>
-                                    <field optional="show" name="unit" width="100" class="text-center"/>
-                                    <field optional="show" name="type_of_material" width="150" class="text-center"/>
-                                    <field optional="show" name="quantity_needed" width="100" class="text-center"/>
-                                    <field optional="show" name="quantity_consumed" width="100" class="text-center" 
-                                           attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field optional="show" name="quantity_ordered" width="100" class="text-center" 
-                                           attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                    <field optional="show" name="balance_to_order" width="100" class="text-center"/>
-                                    <field optional="show" name="balance_to_use" width="100" class="text-center"/>
-                                    <field optional="show" name="stock" width="100" class="text-center"/>
+                                <list editable="bottom" create="false" delete="false" multi_edit="false">
+                                    <field optional="show" name="item" width="250" class="text-center" align="center"/>
+                                    <field optional="show" name="unit" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="type_of_material" width="150" class="text-center" align="center"/>
+                                    <field optional="show" name="quantity_needed" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="quantity_consumed" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="quantity_ordered" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="balance_to_order" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="balance_to_use" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="stock" width="100" class="text-center" align="center"/>
                                 </list>
-
                                 <form>
-                                    <group string="BOQ Line Details" colspan="2">
+                                    <group>
                                         <field name="item"/>
                                         <field name="unit"/>
                                         <field name="type_of_material"/>
@@ -92,7 +87,6 @@
                                 </form>
                             </field>
                         </page>
-
                     </notebook>
                 </sheet>
             </form>
