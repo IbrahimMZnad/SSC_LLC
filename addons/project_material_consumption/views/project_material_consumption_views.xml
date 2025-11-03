@@ -18,47 +18,71 @@
                     <notebook>
                         <!-- PAGE 1: MATERIALS -->
                         <page string="Materials">
-                            <!-- SPAN TITLE -->
                             <div class="o_field_widget text-center" 
                                  style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
                                 MATERIALS DETAILS
                             </div>
 
-                            <field name="line_ids" nolabel="1">
-                                <list editable="bottom" align="center" class="text-center">
+                            <field name="line_ids" nolabel="1" widget="sol_o2m">
+                                <list editable="bottom" create="false" delete="false" multi_edit="false">
                                     <field name="item" width="250" class="text-center" align="center"/>
                                     <field name="unit" width="100" class="text-center" align="center"/>
                                     <field name="type_of_material" width="150" class="text-center" align="center"/>
                                     <field name="quantity_needed" width="100" class="text-center" align="center"/>
-                                    <field name="quantity_consumed" width="100" class="text-center" align="center" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field name="quantity_ordered" width="100" class="text-center" align="center" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                    <field name="quantity_consumed" width="100" class="text-center" align="center"/>
+                                    <field name="quantity_ordered" width="100" class="text-center" align="center"/>
                                     <field name="balance_to_order" width="100" class="text-center" align="center"/>
                                     <field name="balance_to_use" width="100" class="text-center" align="center"/>
                                     <field name="stock" width="100" class="text-center" align="center"/>
                                 </list>
+                                <form>
+                                    <group>
+                                        <field name="item"/>
+                                        <field name="unit"/>
+                                        <field name="type_of_material"/>
+                                        <field name="quantity_needed"/>
+                                        <field name="quantity_consumed"/>
+                                        <field name="quantity_ordered"/>
+                                        <field name="balance_to_order"/>
+                                        <field name="balance_to_use"/>
+                                        <field name="stock"/>
+                                    </group>
+                                </form>
                             </field>
                         </page>
 
                         <!-- PAGE 2: BOQ LINES -->
                         <page string="BOQ Lines">
-                            <!-- SPAN TITLE -->
                             <div class="o_field_widget text-center" 
                                  style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
                                 BOQ LINES DETAILS
                             </div>
 
-                            <field name="boq_line_ids" nolabel="1">
-                                <list editable="bottom" align="center" class="text-center">
+                            <field name="boq_line_ids" nolabel="1" widget="sol_o2m">
+                                <list editable="bottom" create="false" delete="false" multi_edit="false">
                                     <field name="item" width="250" class="text-center" align="center"/>
                                     <field name="unit" width="100" class="text-center" align="center"/>
                                     <field name="type_of_material" width="150" class="text-center" align="center"/>
                                     <field name="quantity_needed" width="100" class="text-center" align="center"/>
-                                    <field name="quantity_consumed" width="100" class="text-center" align="center" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field name="quantity_ordered" width="100" class="text-center" align="center" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
+                                    <field name="quantity_consumed" width="100" class="text-center" align="center"/>
+                                    <field name="quantity_ordered" width="100" class="text-center" align="center"/>
                                     <field name="balance_to_order" width="100" class="text-center" align="center"/>
                                     <field name="balance_to_use" width="100" class="text-center" align="center"/>
                                     <field name="stock" width="100" class="text-center" align="center"/>
                                 </list>
+                                <form>
+                                    <group>
+                                        <field name="item"/>
+                                        <field name="unit"/>
+                                        <field name="type_of_material"/>
+                                        <field name="quantity_needed"/>
+                                        <field name="quantity_consumed"/>
+                                        <field name="quantity_ordered"/>
+                                        <field name="balance_to_order"/>
+                                        <field name="balance_to_use"/>
+                                        <field name="stock"/>
+                                    </group>
+                                </form>
                             </field>
                         </page>
                     </notebook>
@@ -67,57 +91,17 @@
         </field>
     </record>
 
-    <!-- ================= LIST VIEW: MATERIALS ================= -->
-    <record id="view_materials_list" model="ir.ui.view">
-        <field name="name">project.material.consumption.materials.list</field>
-        <field name="model">project.material.consumption.line</field>
-        <field name="arch" type="xml">
-            <list string="Materials" editable="bottom" align="center" class="text-center">
-                <field name="item" width="250" class="text-center" align="center"/>
-                <field name="unit" width="100" class="text-center" align="center"/>
-                <field name="type_of_material" width="150" class="text-center" align="center"/>
-                <field name="quantity_needed" width="100" class="text-center" align="center"/>
-                <field name="quantity_consumed" width="100" class="text-center" align="center"/>
-                <field name="quantity_ordered" width="100" class="text-center" align="center"/>
-                <field name="balance_to_order" width="100" class="text-center" align="center"/>
-                <field name="balance_to_use" width="100" class="text-center" align="center"/>
-                <field name="stock" width="100" class="text-center" align="center"/>
-            </list>
-        </field>
-    </record>
-
-    <!-- ================= LIST VIEW: BOQ LINES ================= -->
-    <record id="view_boq_lines_list" model="ir.ui.view">
-        <field name="name">project.material.consumption.boq.list</field>
-        <field name="model">project.material.consumption.boq.line</field>
-        <field name="arch" type="xml">
-            <list string="BOQ Lines" editable="bottom" align="center" class="text-center">
-                <field name="item" width="250" class="text-center" align="center"/>
-                <field name="unit" width="100" class="text-center" align="center"/>
-                <field name="type_of_material" width="150" class="text-center" align="center"/>
-                <field name="quantity_needed" width="100" class="text-center" align="center"/>
-                <field name="quantity_consumed" width="100" class="text-center" align="center"/>
-                <field name="quantity_ordered" width="100" class="text-center" align="center"/>
-                <field name="balance_to_order" width="100" class="text-center" align="center"/>
-                <field name="balance_to_use" width="100" class="text-center" align="center"/>
-                <field name="stock" width="100" class="text-center" align="center"/>
-            </list>
-        </field>
-    </record>
-
     <!-- ================= ACTIONS ================= -->
     <record id="action_project_materials_list" model="ir.actions.act_window">
         <field name="name">Materials</field>
         <field name="res_model">project.material.consumption.line</field>
         <field name="view_mode">list,form</field>
-        <field name="view_id" ref="view_materials_list"/>
     </record>
 
     <record id="action_project_boq_list" model="ir.actions.act_window">
         <field name="name">BOQ Lines</field>
         <field name="res_model">project.material.consumption.boq.line</field>
         <field name="view_mode">list,form</field>
-        <field name="view_id" ref="view_boq_lines_list"/>
     </record>
 
     <!-- ================= MENU ================= -->
