@@ -7,58 +7,88 @@
         <field name="arch" type="xml">
             <form string="Stock Transfer Report">
                 <sheet>
-                    <!-- Header Fields -->
-                    <group>
-                        <field name="store"/>
-                        <field name="company"/>
+
+                    <!-- HEADER -->
+                    <div style="background-color:#1F618D; padding:14px; border-radius:12px; color:white; text-align:center; margin-bottom:20px;">
+                        <h2 style="margin:0;">📦 Stock Transfer Report</h2>
+                    </div>
+
+                    <!-- Store Info -->
+                    <group style="background-color:#F8F9F9; border-radius:10px; padding:15px; margin-bottom:15px;">
+                        <group>
+                            <field name="store" style="font-weight:bold;"/>
+                            <field name="company"/>
+                        </group>
                     </group>
 
                     <!-- Fetch Button -->
-                    <group>
+                    <div class="text-center" style="margin-bottom:25px;">
                         <button name="action_fetch_transactions"
                                 string="🔄 Fetch All Transactions"
                                 type="object"
-                                class="btn-primary"
-                                icon="fa-refresh"/>
-                    </group>
+                                class="btn btn-primary"
+                                style="background-color:#2E86C1; color:white; font-weight:bold; border-radius:8px; padding:10px 25px;"/>
+                    </div>
 
-                    <!-- Notebook Pages -->
+                    <!-- NOTEBOOK -->
                     <notebook>
-                        <!-- Outgoing Lines Page -->
-                        <page string="Outgoing Lines">
-                            <field name="outgoing_lines">
-                                <form string="Outgoing Line">
-                                    <group>
-                                        <field name="description"/>
-                                        <field name="item"/>
-                                        <field name="item_serial_no"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="date"/>
-                                        <field name="quantity"/>
-                                        <field name="notes"/>
-                                    </group>
-                                </form>
-                            </field>
+
+                        <!-- OUTGOING -->
+                        <page string="📤 Outgoing Lines" style="background-color:#FEF5E7;">
+                            <group>
+                                <field name="outgoing_lines" nolabel="1">
+                                    <div style="display:grid; grid-template-columns: repeat(7, 1fr); background-color:#FADBD8; font-weight:bold; padding:8px; border-radius:8px; text-align:center;">
+                                        <span>Description</span>
+                                        <span>Item</span>
+                                        <span>Serial No.</span>
+                                        <span>Unit</span>
+                                        <span>Type</span>
+                                        <span>Date</span>
+                                        <span>Quantity</span>
+                                    </div>
+
+                                    <div t-foreach="record.outgoing_lines" t-as="line"
+                                         style="display:grid; grid-template-columns: repeat(7, 1fr); background-color:#FCF3CF; padding:8px; border-radius:8px; margin-top:5px; text-align:center;">
+                                        <span><t t-esc="line.description"/></span>
+                                        <span><t t-esc="line.item.display_name"/></span>
+                                        <span><t t-esc="line.item_serial_no"/></span>
+                                        <span><t t-esc="line.unit"/></span>
+                                        <span><t t-esc="line.type_of_material.display_name"/></span>
+                                        <span><t t-esc="line.date"/></span>
+                                        <span><t t-esc="line.quantity"/></span>
+                                    </div>
+                                </field>
+                            </group>
                         </page>
 
-                        <!-- Incoming Lines Page -->
-                        <page string="Incoming Lines">
-                            <field name="incoming_lines">
-                                <form string="Incoming Line">
-                                    <group>
-                                        <field name="description"/>
-                                        <field name="item"/>
-                                        <field name="item_serial_no"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="date"/>
-                                        <field name="quantity"/>
-                                        <field name="notes"/>
-                                    </group>
-                                </form>
-                            </field>
+                        <!-- INCOMING -->
+                        <page string="📥 Incoming Lines" style="background-color:#E8F8F5;">
+                            <group>
+                                <field name="incoming_lines" nolabel="1">
+                                    <div style="display:grid; grid-template-columns: repeat(7, 1fr); background-color:#ABEBC6; font-weight:bold; padding:8px; border-radius:8px; text-align:center;">
+                                        <span>Description</span>
+                                        <span>Item</span>
+                                        <span>Serial No.</span>
+                                        <span>Unit</span>
+                                        <span>Type</span>
+                                        <span>Date</span>
+                                        <span>Quantity</span>
+                                    </div>
+
+                                    <div t-foreach="record.incoming_lines" t-as="line"
+                                         style="display:grid; grid-template-columns: repeat(7, 1fr); background-color:#D1F2EB; padding:8px; border-radius:8px; margin-top:5px; text-align:center;">
+                                        <span><t t-esc="line.description"/></span>
+                                        <span><t t-esc="line.item.display_name"/></span>
+                                        <span><t t-esc="line.item_serial_no"/></span>
+                                        <span><t t-esc="line.unit"/></span>
+                                        <span><t t-esc="line.type_of_material.display_name"/></span>
+                                        <span><t t-esc="line.date"/></span>
+                                        <span><t t-esc="line.quantity"/></span>
+                                    </div>
+                                </field>
+                            </group>
                         </page>
+
                     </notebook>
                 </sheet>
             </form>
@@ -70,9 +100,9 @@
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
-            <list string="Stock Transfer Reports">
-                <field name="store"/>
-                <field name="company"/>
+            <list string="Stock Transfer Reports" create="false" edit="false">
+                <field name="store" string="🏠 Store"/>
+                <field name="company" string="🏢 Company"/>
             </list>
         </field>
     </record>

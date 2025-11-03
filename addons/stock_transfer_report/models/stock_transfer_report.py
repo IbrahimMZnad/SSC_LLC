@@ -16,7 +16,7 @@ class StockTransferReport(models.Model):
         all_stores = self.env['x_inventory_stores_pro'].search([])
 
         for store in all_stores:
-            # إنشاء سجل تقرير جديد لكل Store
+           
             report = self.create({'store': store.id})
 
             transactions = Transaction.search([
@@ -29,7 +29,7 @@ class StockTransferReport(models.Model):
 
             for tx in transactions:
                 for line in tx.x_studio_transfering_details:
-                    # إذا المتجر هو المرسل => Outgoing
+                    
                     if tx.x_studio_from_store.id == store.id:
                         self.env['stock.transfer.line'].create({
                             'transfer_out_id': report.id,
@@ -40,7 +40,6 @@ class StockTransferReport(models.Model):
                             'notes': tx.x_studio_remarks_4,
                         })
 
-                    # إذا المتجر هو المستقبل => Incoming
                     elif tx.x_studio_store.id == store.id:
                         self.env['stock.transfer.line'].create({
                             'transfer_in_id': report.id,
