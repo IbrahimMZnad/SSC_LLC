@@ -9,16 +9,14 @@
                 <sheet>
                     <!-- Header Fields -->
                     <group>
-                        <field name="from_store"/>
-                        <field name="company_from"/>
-                        <field name="to_store"/>
-                        <field name="company_to"/>
+                        <field name="store"/>
+                        <field name="company"/>
                     </group>
 
                     <!-- Fetch Button -->
                     <group>
                         <button name="action_fetch_transactions"
-                                string="🔄 Fetch Transactions"
+                                string="🔄 Fetch All Transactions"
                                 type="object"
                                 class="btn-primary"
                                 icon="fa-refresh"/>
@@ -28,7 +26,7 @@
                     <notebook>
                         <!-- Outgoing Lines Page -->
                         <page string="Outgoing Lines">
-                            <field name="outgoing_lines" context="{'default_report_type': 'outgoing'}">
+                            <field name="outgoing_lines">
                                 <form string="Outgoing Line">
                                     <group>
                                         <field name="description"/>
@@ -46,7 +44,7 @@
 
                         <!-- Incoming Lines Page -->
                         <page string="Incoming Lines">
-                            <field name="incoming_lines" context="{'default_report_type': 'incoming'}">
+                            <field name="incoming_lines">
                                 <form string="Incoming Line">
                                     <group>
                                         <field name="description"/>
@@ -73,10 +71,8 @@
         <field name="model">stock.transfer.report</field>
         <field name="arch" type="xml">
             <list string="Stock Transfer Reports">
-                <field name="from_store"/>
-                <field name="company_from"/>
-                <field name="to_store"/>
-                <field name="company_to"/>
+                <field name="store"/>
+                <field name="company"/>
             </list>
         </field>
     </record>

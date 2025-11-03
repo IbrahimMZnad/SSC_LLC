@@ -5,46 +5,59 @@ class StockTransferReport(models.Model):
     _name = 'stock.transfer.report'
     _description = 'Stock Transfer Report'
 
-    from_store = fields.Many2one('x_inventory_stores_pro', string="From Store")
-    to_store = fields.Many2one('x_inventory_stores_pro', string="To Store")
-    company_from = fields.Many2one('res.company', string="Company From", related='from_store.x_studio_company', store=True)
-    company_to = fields.Many2one('res.company', string="Company To", related='to_store.x_studio_company', store=True)
-
+    store = fields.Many2one('x_inventory_stores_pro', string="Store")
+    company = fields.Many2one('res.company', string="Company", related='store.x_studio_company', store=True)
     outgoing_lines = fields.One2many('stock.transfer.line', 'transfer_id', string="Outgoing Lines")
     incoming_lines = fields.One2many('stock.transfer.line', 'transfer_id', string="Incoming Lines")
 
+    @api.model
     def fill_lines_from_transactions(self):
+        """Fill or update transfer lines for each store based on x_transaction"""
         Transaction = self.env['x_transaction']
-        for rec in self:
+        Store = self.env['x_inventory_stores_pro']
+
+        # حذف السجلات القديمة قبل إعادة إنشائها (اختياري)
+        self.search([]).unlink()
+
+        for store in Store.search([]):
+            # إنشاء سجل جديد للتقرير الخاص بالمستودع
+            report = self.create({'store': store.id})
+
+            # جلب جميع عمليات النقل المتعلقة بهذا المستودع
             transactions = Transaction.search([
                 ('x_studio_type_of_transaction', '=', 'Transfer'),
                 ('x_studio_selection_field_64t_1ipgtrlhm', '=', 'status2'),
-                ('x_studio_from_store', '=', rec.from_store.id),
-                ('x_studio_store', '=', rec.to_store.id),
+                '|',
+                ('x_studio_from_store', '=', store.id),
+                ('x_studio_store', '=', store.id),
             ])
+
             for tx in transactions:
                 for line in tx.x_studio_transfering_details:
-                    # Outgoing Line
-                    self.env['stock.transfer.line'].create({
-                        'transfer_id': rec.id,
-                        'description': 'to ' + rec.to_store.x_name,
-                        'item': line.x_studio_item.id,
-                        'date': tx.x_studio_date_2,
-                        'quantity': line.x_studio_quantity,
-                        'notes': tx.x_studio_remarks_4,
-                    })
-                    # Incoming Line
-                    self.env['stock.transfer.line'].create({
-                        'transfer_id': rec.id,
-                        'description': 'from ' + rec.to_store.x_name,
-                        'item': line.x_studio_item.id,
-                        'date': tx.x_studio_date_2,
-                        'quantity': line.x_studio_quantity,
-                        'notes': tx.x_studio_remarks_4,
-                    })
+                    # الحالة 1: المستودع هو المرسل
+                    if tx.x_studio_from_store.id == store.id:
+                        self.env['stock.transfer.line'].create({
+                            'transfer_id': report.id,
+                            'description': 'to ' + (tx.x_studio_store.x_name or ''),
+                            'item': line.x_studio_item.id,
+                            'date': tx.x_studio_date_2,
+                            'quantity': line.x_studio_quantity,
+                            'notes': tx.x_studio_remarks_4,
+                        })
+
+                    # الحالة 2: المستودع هو المستقبل
+                    elif tx.x_studio_store.id == store.id:
+                        self.env['stock.transfer.line'].create({
+                            'transfer_id': report.id,
+                            'description': 'from ' + (tx.x_studio_from_store.x_name or ''),
+                            'item': line.x_studio_item.id,
+                            'date': tx.x_studio_date_2,
+                            'quantity': line.x_studio_quantity,
+                            'notes': tx.x_studio_remarks_4,
+                        })
 
     def action_fetch_transactions(self):
-        """Button action to fetch transactions and fill lines"""
+        """Button to refresh and rebuild all reports"""
         self.fill_lines_from_transactions()
         return True
 
@@ -52,7 +65,7 @@ class StockTransferReport(models.Model):
 class StockTransferLine(models.Model):
     _name = 'stock.transfer.line'
     _description = 'Stock Transfer Line'
-
+    
     transfer_id = fields.Many2one('stock.transfer.report', string="Transfer")
     description = fields.Char(string="Description")
     item = fields.Many2one('x_all_items_list', string="Item")
