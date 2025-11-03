@@ -7,12 +7,22 @@
             <field name="name">stock.transfer.report.form</field>
             <field name="model">stock.transfer.report</field>
             <field name="arch" type="xml">
-                <form string="Stock Transfer Report" create="false" edit="false">
+                <form string="Stock Transfer Report" create="true" edit="true" class="oe_background_grey">
                     <sheet style="background-color:#f9fafb; padding:20px; border-radius:12px;">
-                        <group>
-                            <group>
-                                <field name="store" readonly="1" string="Store"/>
-                            </group>
+
+                        <!-- Header -->
+                        <group string="Report Information" col="2" style="background-color:#F4F6F7; padding:10px; border-radius:8px;">
+                            <field name="store" nolabel="0"/>
+                            <field name="company" nolabel="0"/>
+                        </group>
+
+                        <!-- Fetch Button -->
+                        <group style="margin-top:15px; text-align:center;">
+                            <button name="action_fetch_transactions"
+                                    string="🔄 Fetch All Transactions"
+                                    type="object"
+                                    class="btn-primary"
+                                    style="background-color:#2874A6; color:white; font-weight:bold; border-radius:6px; padding:8px 16px;"/>
                         </group>
 
                         <notebook>
