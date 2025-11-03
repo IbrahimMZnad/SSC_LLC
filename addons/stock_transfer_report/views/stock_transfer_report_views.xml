@@ -7,10 +7,10 @@
         <field name="arch" type="xml">
             <form string="Stock Transfer Report">
                 <sheet>
-                    <!-- Header Fields -->
+                    <!-- Header -->
                     <group>
-                        <field name="store" class="o_field_dark"/>
-                        <field name="company" class="o_field_dark"/>
+                        <field name="store"/>
+                        <field name="company"/>
                     </group>
 
                     <!-- Fetch Button -->
@@ -22,41 +22,36 @@
                                 icon="fa-refresh"/>
                     </group>
 
-                    <!-- Notebook Pages -->
                     <notebook>
-                        <!-- Outgoing Lines Page -->
-                        <page string="Outgoing Lines" style="background-color:#FCF3CF; padding:10px; border-radius:8px;">
-                            <field name="outgoing_lines" nolabel="1" style="width:100%;">
-                                <form string="Outgoing Line" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; text-align:center; padding:5px;">
-                                    <group>
-                                        <field name="description" style="font-weight:bold;"/>
-                                        <field name="item"/>
-                                        <field name="item_serial_no"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="date"/>
-                                        <field name="quantity"/>
-                                        <field name="notes"/>
-                                    </group>
-                                </form>
+                        <!-- Outgoing Lines -->
+                        <page string="Outgoing Lines" style="background-color:#FFF3CD; padding:10px; border-radius:8px;">
+                            <field name="outgoing_lines" nolabel="1" widget="sol_o2m">
+                                <list editable="bottom" create="false" delete="false" multi_edit="false">
+                                    <field optional="show" name="description" width="150" class="text-center" align="center"/>
+                                    <field optional="show" name="item" width="150" class="text-center" align="center"/>
+                                    <field optional="show" name="item_serial_no" width="120" class="text-center" align="center"/>
+                                    <field optional="show" name="unit" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="type_of_material" width="120" class="text-center" align="center"/>
+                                    <field optional="show" name="date" width="120" class="text-center" align="center"/>
+                                    <field optional="show" name="quantity" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="notes" width="250" class="text-center" align="center"/>
+                                </list>
                             </field>
                         </page>
 
-                        <!-- Incoming Lines Page -->
+                        <!-- Incoming Lines -->
                         <page string="Incoming Lines" style="background-color:#D6EAF8; padding:10px; border-radius:8px;">
-                            <field name="incoming_lines" nolabel="1" style="width:100%;">
-                                <form string="Incoming Line" style="display:grid; grid-template-columns: repeat(7, 1fr); gap:8px; text-align:center; padding:5px;">
-                                    <group>
-                                        <field name="description" style="font-weight:bold;"/>
-                                        <field name="item"/>
-                                        <field name="item_serial_no"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="date"/>
-                                        <field name="quantity"/>
-                                        <field name="notes"/>
-                                    </group>
-                                </form>
+                            <field name="incoming_lines" nolabel="1" widget="sol_o2m">
+                                <list editable="bottom" create="false" delete="false" multi_edit="false">
+                                    <field optional="show" name="description" width="150" class="text-center" align="center"/>
+                                    <field optional="show" name="item" width="150" class="text-center" align="center"/>
+                                    <field optional="show" name="item_serial_no" width="120" class="text-center" align="center"/>
+                                    <field optional="show" name="unit" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="type_of_material" width="120" class="text-center" align="center"/>
+                                    <field optional="show" name="date" width="120" class="text-center" align="center"/>
+                                    <field optional="show" name="quantity" width="100" class="text-center" align="center"/>
+                                    <field optional="show" name="notes" width="250" class="text-center" align="center"/>
+                                </list>
                             </field>
                         </page>
                     </notebook>
@@ -65,7 +60,7 @@
         </field>
     </record>
 
-    <!-- LIST VIEW for stock.transfer.report -->
+    <!-- LIST VIEW -->
     <record id="view_stock_transfer_report_list" model="ir.ui.view">
         <field name="name">stock.transfer.report.list</field>
         <field name="model">stock.transfer.report</field>
@@ -82,7 +77,6 @@
         <field name="name">Stock Transfer Reports</field>
         <field name="res_model">stock.transfer.report</field>
         <field name="view_mode">list,form</field>
-        <field name="view_id" ref="view_stock_transfer_report_list"/>
     </record>
 
     <!-- MENU -->
