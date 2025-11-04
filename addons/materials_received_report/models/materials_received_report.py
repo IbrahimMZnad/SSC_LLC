@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from odoo import models, fields, api
+from odoo import models, fields, api, _
 from datetime import datetime
 import calendar
 
@@ -10,7 +10,6 @@ class MaterialsReceivedReport(models.Model):
 
     name = fields.Char(string="Report Name", compute='_compute_name', store=True)
     report_type = fields.Selection([
-        ('daily', 'Daily'),
         ('monthly', 'Monthly')
     ], string="Report Type", default='monthly')
 
@@ -38,7 +37,6 @@ class MaterialsReceivedReport(models.Model):
                 rec.receipt_ids = [(5, 0, 0)]
                 continue
 
-            # احسب أول وآخر يوم من الشهر وحولهم لـ date
             month_int = int(rec.month)
             year_int = rec.year
             first_day = datetime(year_int, month_int, 1).date()
@@ -57,6 +55,55 @@ class MaterialsReceivedReport(models.Model):
                     date_value = fields.Date.to_date(line.x_studio_date)
                     if first_day <= date_value <= last_day:
                         valid_ids.append(r.id)
-                        break  # ما بدنا نكرر نفس السجل أكثر من مرة
+                        break
 
             rec.receipt_ids = [(6, 0, list(set(valid_ids)))]
+
+    # ✅ الكرون: إنشاء تقرير شهري تلقائياً مع تسجيل Log واسم المستخدم
+    @api.model
+    def create_monthly_report_auto(self):
+        """يتم استدعاؤها يومياً لإنشاء تقرير الشهر الحالي إذا لم يكن موجود."""
+        today = datetime.today()
+        current_month = str(today.month)
+        current_year = today.year
+
+        # المستخدم المسؤول عن الـ Scheduled Action
+        cron_user = self.env.user
+
+        companies = self.env['res.company'].search([])
+        for company in companies:
+            existing = self.search([
+                ('month', '=', current_month),
+                ('year', '=', current_year),
+                ('company_id', '=', company.id)
+            ], limit=1)
+
+            if not existing:
+                projects = self.env['x_projects_list'].search([])
+                new_report = self.create({
+                    'month': current_month,
+                    'year': current_year,
+                    'company_id': company.id,
+                    'project_ids': [(6, 0, projects.ids)],
+                })
+
+                # 🔹 Log message واضح في chatter + server log
+                message = _("✅ Monthly Materials Received Report created automatically for %s (%s %s) by Scheduled Action user: %s") % (
+                    company.name,
+                    calendar.month_name[int(current_month)],
+                    current_year,
+                    cron_user.name
+                )
+                new_report.message_post(body=message)
+                self.env.cr.commit()  # تأكيد الحفظ الفوري
+                _logger = self.env['ir.logging']
+                _logger.create({
+                    'name': 'Materials Received Report Cron',
+                    'type': 'server',
+                    'dbname': self._cr.dbname,
+                    'level': 'INFO',
+                    'message': message,
+                    'path': 'materials.received.report',
+                    'func': 'create_monthly_report_auto',
+                    'line': 0,
+                })
