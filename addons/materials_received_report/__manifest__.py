@@ -8,7 +8,6 @@
     'depends': ['base', 'mail'],
     'data': [
         'views/materials_received_report_views.xml',
-        'data/ir_cron_data.xml', 
     ],
     'application': True,
     'installable': True,
