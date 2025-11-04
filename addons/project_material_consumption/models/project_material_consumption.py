@@ -290,12 +290,21 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
     @api.depends('quantity_needed', 'quantity_ordered')
     def _compute_balance_to_order(self):
         for rec in self:
-            rec.balance_to_order = (rec.quantity_needed or 0) - (rec.quantity_ordered or 0)
+            if not rec.quantity_needed:
+                rec.balance_to_order = 0
+            else:
+                value = (rec.quantity_needed or 0) - (rec.quantity_ordered or 0)
+                rec.balance_to_order = value if value > 0 else 0
 
     @api.depends('quantity_needed', 'quantity_consumed')
     def _compute_balance_to_use(self):
         for rec in self:
-            rec.balance_to_use = (rec.quantity_needed or 0) - (rec.quantity_consumed or 0)
+            if not rec.quantity_needed:
+                rec.balance_to_use = 0
+            else:
+                value = (rec.quantity_needed or 0) - (rec.quantity_consumed or 0)
+                rec.balance_to_use = value if value > 0 else 0
+
 
     @api.depends('item', 'consumption_id.name')
     def _compute_stock(self):
