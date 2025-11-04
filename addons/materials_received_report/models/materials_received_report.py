@@ -59,51 +59,55 @@ class MaterialsReceivedReport(models.Model):
 
             rec.receipt_ids = [(6, 0, list(set(valid_ids)))]
 
-    # ✅ الكرون: إنشاء تقرير شهري تلقائياً مع تسجيل Log واسم المستخدم
+    # ✅ الكرون: إنشاء تقارير لجميع أشهر 2024 وحتى الشهر الحالي
     @api.model
     def create_monthly_report_auto(self):
-        """يتم استدعاؤها يومياً لإنشاء تقرير الشهر الحالي إذا لم يكن موجود."""
+        """يتم استدعاؤها يومياً لإنشاء تقارير لكل أشهر 2024 حتى الشهر الحالي."""
         today = datetime.today()
-        current_month = str(today.month)
         current_year = today.year
+        current_month = today.month
 
-        # المستخدم المسؤول عن الـ Scheduled Action
         cron_user = self.env.user
 
         companies = self.env['res.company'].search([])
         for company in companies:
-            existing = self.search([
-                ('month', '=', current_month),
-                ('year', '=', current_year),
-                ('company_id', '=', company.id)
-            ], limit=1)
+            for year in [2024, current_year]:
+                start_month = 1 if year < current_year else 1
+                end_month = 12 if year < current_year else current_month
 
-            if not existing:
-                projects = self.env['x_projects_list'].search([])
-                new_report = self.create({
-                    'month': current_month,
-                    'year': current_year,
-                    'company_id': company.id,
-                    'project_ids': [(6, 0, projects.ids)],
-                })
+                for month in range(start_month, end_month + 1):
+                    month_str = str(month)
+                    existing = self.search([
+                        ('month', '=', month_str),
+                        ('year', '=', year),
+                        ('company_id', '=', company.id)
+                    ], limit=1)
 
-                # 🔹 Log message واضح في chatter + server log
-                message = _("✅ Monthly Materials Received Report created automatically for %s (%s %s) by Scheduled Action user: %s") % (
-                    company.name,
-                    calendar.month_name[int(current_month)],
-                    current_year,
-                    cron_user.name
-                )
-                new_report.message_post(body=message)
-                self.env.cr.commit()  # تأكيد الحفظ الفوري
-                _logger = self.env['ir.logging']
-                _logger.create({
-                    'name': 'Materials Received Report Cron',
-                    'type': 'server',
-                    'dbname': self._cr.dbname,
-                    'level': 'INFO',
-                    'message': message,
-                    'path': 'materials.received.report',
-                    'func': 'create_monthly_report_auto',
-                    'line': 0,
-                })
+                    if not existing:
+                        projects = self.env['x_projects_list'].search([])
+                        new_report = self.create({
+                            'month': month_str,
+                            'year': year,
+                            'company_id': company.id,
+                            'project_ids': [(6, 0, projects.ids)],
+                        })
+
+                        message = _("✅ Monthly Materials Received Report created automatically for %s (%s %s) by Scheduled Action user: %s") % (
+                            company.name,
+                            calendar.month_name[month],
+                            year,
+                            cron_user.name
+                        )
+                        new_report.message_post(body=message)
+                        self.env.cr.commit()
+                        _logger = self.env['ir.logging']
+                        _logger.create({
+                            'name': 'Materials Received Report Cron',
+                            'type': 'server',
+                            'dbname': self._cr.dbname,
+                            'level': 'INFO',
+                            'message': message,
+                            'path': 'materials.received.report',
+                            'func': 'create_monthly_report_auto',
+                            'line': 0,
+                        })
