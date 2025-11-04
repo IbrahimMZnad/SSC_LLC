@@ -10,7 +10,6 @@
         <!-- تشغيل كل يوم الساعة 2 صباحاً -->
         <field name="interval_number">1</field>
         <field name="interval_type">days</field>
-        <field name="doall">False</field>
         <field name="nextcall">2025-11-05 02:00:00</field>
         <field name="user_id" ref="base.user_admin"/>
     </record>
