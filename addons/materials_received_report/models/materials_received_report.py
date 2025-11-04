@@ -2,24 +2,28 @@
 from odoo import models, fields, api, _
 from datetime import datetime
 import calendar
+import logging
 
+_logger = logging.getLogger(__name__)
 
 class MaterialsReceivedReport(models.Model):
     _name = 'materials.received.report'
     _description = 'Materials Received Report'
+    _inherit = ['mail.thread', 'mail.activity.mixin']  # ✅ مهم للـ Chatter
 
-    name = fields.Char(string="Report Name", compute='_compute_name', store=True)
+    name = fields.Char(string="Report Name", compute='_compute_name', store=True, tracking=True)
     report_type = fields.Selection([
         ('monthly', 'Monthly')
-    ], string="Report Type", default='monthly')
+    ], string="Report Type", default='monthly', tracking=True)
 
     month = fields.Selection(
         [(str(i), calendar.month_name[i]) for i in range(1, 13)],
         string="Month",
-        default=lambda self: str(datetime.today().month)
+        default=lambda self: str(datetime.today().month),
+        tracking=True
     )
 
-    year = fields.Integer(string="Year", default=lambda self: datetime.today().year)
+    year = fields.Integer(string="Year", default=lambda self: datetime.today().year, tracking=True)
     company_id = fields.Many2one('res.company', string="Company", required=True, default=lambda self: self.env.company)
     project_ids = fields.Many2many('x_projects_list', string="Projects")
     receipt_ids = fields.Many2many('x_material_receipt', string="Material Receipts", compute='_compute_receipts', store=False)
@@ -59,10 +63,9 @@ class MaterialsReceivedReport(models.Model):
 
             rec.receipt_ids = [(6, 0, list(set(valid_ids)))]
 
-    # ✅ الكرون: إنشاء تقارير لجميع أشهر 2024 وحتى الشهر الحالي
     @api.model
     def create_monthly_report_auto(self):
-        """يتم استدعاؤها يومياً لإنشاء تقارير لكل أشهر 2024 حتى الشهر الحالي."""
+        """إنشاء تقارير شهرية تلقائياً لكل شركة إذا لم يكن موجود."""
         today = datetime.today()
         current_year = today.year
         current_month = today.month
@@ -70,11 +73,15 @@ class MaterialsReceivedReport(models.Model):
         cron_user = self.env.user
 
         companies = self.env['res.company'].search([])
-        for company in companies:
-            for year in [2024, current_year]:
-                start_month = 1 if year < current_year else 1
-                end_month = 12 if year < current_year else current_month
+        projects = self.env['x_projects_list'].search([])
 
+        # ✅ إنشاء تقارير لكل شهر منذ بداية 2024 حتى الشهر الحالي
+        for company in companies:
+            for year in range(2024, current_year + 1):
+                start_month = 1
+                end_month = 12
+                if year == current_year:
+                    end_month = current_month
                 for month in range(start_month, end_month + 1):
                     month_str = str(month)
                     existing = self.search([
@@ -82,32 +89,20 @@ class MaterialsReceivedReport(models.Model):
                         ('year', '=', year),
                         ('company_id', '=', company.id)
                     ], limit=1)
-
                     if not existing:
-                        projects = self.env['x_projects_list'].search([])
                         new_report = self.create({
                             'month': month_str,
                             'year': year,
                             'company_id': company.id,
                             'project_ids': [(6, 0, projects.ids)],
                         })
-
                         message = _("✅ Monthly Materials Received Report created automatically for %s (%s %s) by Scheduled Action user: %s") % (
                             company.name,
                             calendar.month_name[month],
                             year,
                             cron_user.name
                         )
+                        # 🔹 تسجيل في Chatter
                         new_report.message_post(body=message)
-                        self.env.cr.commit()
-                        _logger = self.env['ir.logging']
-                        _logger.create({
-                            'name': 'Materials Received Report Cron',
-                            'type': 'server',
-                            'dbname': self._cr.dbname,
-                            'level': 'INFO',
-                            'message': message,
-                            'path': 'materials.received.report',
-                            'func': 'create_monthly_report_auto',
-                            'line': 0,
-                        })
+                        # 🔹 تسجيل في Server Log
+                        _logger.info(message)
