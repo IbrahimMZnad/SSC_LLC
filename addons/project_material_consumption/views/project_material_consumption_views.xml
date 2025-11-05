@@ -22,7 +22,7 @@
                             </div>
 
                             <field name="line_ids" widget="one2many_list" options="{'no_create': False, 'no_edit': False, 'no_open': True}" class="o_list_view">
-                                <tree class="text-center" style="border:1px solid #cdd3d8; background:#fafafa;">
+                                <list class="text-center" style="border:1px solid #cdd3d8; background:#fafafa;">
                                     <field name="item"/>
                                     <field name="unit"/>
                                     <field name="type_of_material"/>
@@ -32,7 +32,7 @@
                                     <field name="balance_to_order"/>
                                     <field name="balance_to_use"/>
                                     <field name="stock"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
 
@@ -43,7 +43,7 @@
                             </div>
 
                             <field name="boq_line_ids" widget="one2many_list" options="{'no_create': False, 'no_edit': False, 'no_open': True}" class="o_list_view">
-                                <tree class="text-center" style="border:1px solid #cdd3d8; background:#fafafa;">
+                                <list class="text-center" style="border:1px solid #cdd3d8; background:#fafafa;">
                                     <field name="item"/>
                                     <field name="unit"/>
                                     <field name="type_of_material"/>
@@ -53,7 +53,7 @@
                                     <field name="balance_to_order"/>
                                     <field name="balance_to_use"/>
                                     <field name="stock"/>
-                                </tree>
+                                </list>
                             </field>
                         </page>
                     </notebook>
