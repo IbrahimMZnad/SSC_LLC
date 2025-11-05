@@ -151,7 +151,7 @@ class ProjectMaterialConsumptionLine(models.Model):
                     ('x_studio_project', '=', rec.consumption_id.name.id),
                     ('x_studio_type_of_transaction', '=', 'Consumed'),
                     ('x_studio_item_1', '=', rec.item.id),
-                    ('x_studio_company', '=', rec.consumption_id.company_id.id)
+                    ('x_studio_company', '=', rec.consumption_id.company_id.id),
                     ('x_studio_selection_field_64t_1ipgtrlhm', '=', 'status2')
                 ])
                 if consumed_records:
