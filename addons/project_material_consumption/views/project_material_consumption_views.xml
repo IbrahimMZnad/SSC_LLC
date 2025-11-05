@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- FORM VIEW -->
     <record id="view_project_material_consumption_form" model="ir.ui.view">
         <field name="name">project.material.consumption.form</field>
         <field name="model">project.material.consumption</field>
@@ -20,15 +19,13 @@
 
                         <!-- PAGE 1: MATERIALS -->
                         <page string="Materials">
-                            <!-- TITLE -->
-                            <label class="o_form_label"
-                                   style="text-align: center; font-weight: 700; font-size: 15px;
-                                          padding: 12px; background: #e9f0f5; border-radius: 6px;
-                                          border: 1px solid #cdd3d8; margin-bottom: 12px;">
+                            <div class="o_form_label"
+                                 style="text-align: center; font-weight: 700; font-size: 15px;
+                                        padding: 12px; background: #e9f0f5; border-radius: 6px;
+                                        border: 1px solid #cdd3d8; margin-bottom: 12px;">
                                 This list includes all materials that have undergone movement, whether ordered or consumed on site.
-                            </label>
+                            </div>
 
-                            <!-- LIST -->
                             <field name="line_ids">
                                 <tree editable="bottom" class="text-center" style="border:1px solid #cdd3d8; background:#fafafa;">
                                     <field name="item"/>
@@ -46,15 +43,13 @@
 
                         <!-- PAGE 2: BOQ LINES -->
                         <page string="BOQ Lines">
-                            <!-- TITLE -->
-                            <label class="o_form_label"
-                                   style="text-align: center; font-weight: 700; font-size: 15px;
-                                          padding: 12px; background: #e9f0f5; border-radius: 6px;
-                                          border: 1px solid #cdd3d8; margin-bottom: 12px;">
+                            <div class="o_form_label"
+                                 style="text-align: center; font-weight: 700; font-size: 15px;
+                                        padding: 12px; background: #e9f0f5; border-radius: 6px;
+                                        border: 1px solid #cdd3d8; margin-bottom: 12px;">
                                 This list includes only the materials that are part of the project BOQ and have undergone movement, whether ordered or consumed on site.
-                            </label>
+                            </div>
 
-                            <!-- LIST -->
                             <field name="boq_line_ids">
                                 <tree editable="bottom" class="text-center" style="border:1px solid #cdd3d8; background:#fafafa;">
                                     <field name="item"/>
