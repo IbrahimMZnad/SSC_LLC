@@ -18,10 +18,11 @@
                         <!-- PAGE 1: MATERIALS -->
                         <page string="Materials">
                             <!-- SPAN TITLE -->
-                            <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
-                                MATERIALS DETAILS
+                            <div class="o_field_widget"
+                                style="text-align: center; font-weight: 700; font-size: 15px; padding: 14px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 10px;">
+                                This list includes all materials that have undergone movement, whether ordered or consumed on site.
                             </div>
+
 
                             <field name="line_ids">
                                 <list editable="bottom" align="center" class="text-center">
@@ -41,10 +42,11 @@
                         <!-- PAGE 2: BOQ LINES -->
                         <page string="BOQ Lines">
                             <!-- SPAN TITLE -->
-                            <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
-                                BOQ LINES DETAILS
+                            <div class="o_field_widget"
+                                style="text-align: center; font-weight: 700; font-size: 15px; padding: 14px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 10px;">
+                                This list includes only the materials that are part of the project BOQ and have undergone movement, whether ordered or consumed on site.
                             </div>
+
 
                             <field name="boq_line_ids">
                                 <list editable="bottom" align="center" class="text-center">
