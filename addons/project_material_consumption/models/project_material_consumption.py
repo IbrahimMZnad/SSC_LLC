@@ -55,7 +55,8 @@ class ProjectMaterialConsumption(models.Model):
             consumed_items = Transactions.search([
                 ('x_studio_project', '=', rec.name.id),
                 ('x_studio_type_of_transaction', '=', 'Consumed'),
-                ('x_studio_company', '=', rec.company_id.id)
+                ('x_studio_company', '=', rec.company_id.id),
+                ('x_studio_selection_field_64t_1ipgtrlhm', '=', 'status2')
             ]).mapped('x_studio_item_1')
             consumed_ids = consumed_items.ids
 
@@ -88,10 +89,7 @@ class ProjectMaterialConsumption(models.Model):
                         'item': item_id,
                     })
 
-
-# =====================================================================
 #                              LINE MODEL
-# =====================================================================
 
 class ProjectMaterialConsumptionLine(models.Model):
     _name = 'project.material.consumption.line'
@@ -154,6 +152,7 @@ class ProjectMaterialConsumptionLine(models.Model):
                     ('x_studio_type_of_transaction', '=', 'Consumed'),
                     ('x_studio_item_1', '=', rec.item.id),
                     ('x_studio_company', '=', rec.consumption_id.company_id.id)
+                    ('x_studio_selection_field_64t_1ipgtrlhm', '=', 'status2')
                 ])
                 if consumed_records:
                     qty_sum = sum(getattr(r, 'x_studio_quantity', 0) or 0 for r in consumed_records)
@@ -211,10 +210,7 @@ class ProjectMaterialConsumptionLine(models.Model):
                             total_stock += line.x_studio_available_quantity or 0
             rec.stock = total_stock
 
-
-# =====================================================================
 #                           BOQ LINE MODEL
-# =====================================================================
 
 class ProjectMaterialConsumptionBoqLine(models.Model):
     _name = 'project.material.consumption.boq.line'
@@ -276,7 +272,8 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
                     ('x_studio_project', '=', rec.consumption_id.name.id),
                     ('x_studio_type_of_transaction', '=', 'Consumed'),
                     ('x_studio_item_1', '=', rec.item.id),
-                    ('x_studio_company', '=', rec.consumption_id.company_id.id)
+                    ('x_studio_company', '=', rec.consumption_id.company_id.id),
+                    ('x_studio_selection_field_64t_1ipgtrlhm', '=', 'status2')
                 ])
                 qty_sum = sum(getattr(r, 'x_studio_quantity', 0) or 0 for r in consumed_records)
             rec.quantity_consumed = qty_sum
