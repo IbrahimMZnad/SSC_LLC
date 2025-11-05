@@ -8,62 +8,132 @@
             <form string="Project Material Consumption">
                 <sheet>
                     <!-- Header Section -->
-                    <group>
-                        <field name="name"/>
-                        <field name="company_id"/>
+                    <group style="background: #f5f7fa; border-radius: 8px; padding: 12px; border: 1px solid #d6d6d6; margin-bottom: 12px;">
+                        <field name="name" style="font-weight:700; font-size:15px;"/>
+                        <field name="company_id" style="font-size:14px; color:#555;"/>
                     </group>
 
                     <!-- Notebook Section -->
                     <notebook>
+
                         <!-- PAGE 1: MATERIALS -->
                         <page string="Materials">
-                            <!-- SPAN TITLE -->
+
+                            <!-- TITLE -->
                             <div class="o_field_widget"
-                                style="text-align: center; font-weight: 700; font-size: 15px; padding: 14px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 10px;">
+                                 style="text-align: center; font-weight: 700; font-size: 15px; padding: 12px; background: #e9f0f5; border-radius: 6px; border: 1px solid #cdd3d8; margin-bottom: 12px;">
                                 This list includes all materials that have undergone movement, whether ordered or consumed on site.
                             </div>
 
-
-
+                            <!-- LIST VIEW -->
                             <field name="line_ids">
-                                <list editable="bottom" align="center" class="text-center">
-                                    <field name="item" width="250px" class="text-center" align="center"/>
-                                    <field name="unit" width="100px" class="text-center" align="center"/>
-                                    <field name="type_of_material" width="150px" class="text-center" align="center"/>
-                                    <field name="quantity_needed" width="100px" class="text-center" align="center"/>
-                                    <field name="quantity_consumed" width="100px" class="text-center" align="center" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field name="quantity_ordered" width="100px" class="text-center" align="center" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                    <field name="balance_to_order" width="100px" class="text-center" align="center"/>
-                                    <field name="balance_to_use" width="100px" class="text-center" align="center"/>
-                                    <field name="stock" width="100px" class="text-center" align="center"/>
-                                </list>
+                                <tree class="o_list_view table-sm" editable="bottom">
+                                    <field name="item" string="Item" class="text-center"/>
+                                    <field name="unit" string="Unit" class="text-center"/>
+                                    <field name="type_of_material" string="Type" class="text-center"/>
+                                    <field name="quantity_needed" string="Qty Needed" class="text-center"/>
+                                    <field name="quantity_consumed" string="Consumed" class="text-center"
+                                           attrs="{'invisible': [('quantity_consumed','=',0)]}"/>
+                                    <field name="quantity_ordered" string="Ordered" class="text-center"
+                                           attrs="{'invisible': [('quantity_ordered','=',0)]}"/>
+                                    <field name="balance_to_order" string="Balance to Order" class="text-center"/>
+                                    <field name="balance_to_use" string="Balance to Use" class="text-center"/>
+                                    <field name="stock" string="Stock" class="text-center"/>
+                                </tree>
+                                <!-- FORM VIEW FOR ONE2MANY -->
+                                <form>
+                                    <group col="3" class="o_inner_group" style="gap:8px;">
+
+                                        <!-- BOX 1 -->
+                                        <group style="border:1px solid #d5d5d5; border-radius:8px; padding:10px; background:#fafafa;">
+                                            <label string="Material Info" class="text-center" style="font-weight:600; margin-bottom:8px;"/>
+                                            <field name="item" class="text-center"/>
+                                            <field name="unit" class="text-center"/>
+                                            <field name="type_of_material" class="text-center"/>
+                                        </group>
+
+                                        <!-- BOX 2 -->
+                                        <group style="border:1px solid #d5d5d5; border-radius:8px; padding:10px; background:#fafafa;">
+                                            <label string="Quantity Movement" class="text-center" style="font-weight:600; margin-bottom:8px;"/>
+                                            <field name="quantity_needed" class="text-center"/>
+                                            <field name="quantity_consumed" class="text-center" 
+                                                   attrs="{'invisible':[('quantity_consumed','=',0)]}"/>
+                                            <field name="quantity_ordered" class="text-center" 
+                                                   attrs="{'invisible':[('quantity_ordered','=',0)]}"/>
+                                        </group>
+
+                                        <!-- BOX 3 -->
+                                        <group style="border:1px solid #d5d5d5; border-radius:8px; padding:10px; background:#fafafa;">
+                                            <label string="Results Summary" class="text-center" style="font-weight:600; margin-bottom:8px;"/>
+                                            <field name="balance_to_order" class="text-center" readonly="1"/>
+                                            <field name="balance_to_use" class="text-center" readonly="1"/>
+                                            <field name="stock" class="text-center" readonly="1"/>
+                                        </group>
+
+                                    </group>
+                                </form>
                             </field>
                         </page>
 
                         <!-- PAGE 2: BOQ LINES -->
                         <page string="BOQ Lines">
-                            <!-- SPAN TITLE -->
+
+                            <!-- TITLE -->
                             <div class="o_field_widget"
-                                style="text-align: center; font-weight: 700; font-size: 15px; padding: 14px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 10px;">
+                                 style="text-align: center; font-weight: 700; font-size: 15px; padding: 12px; background: #e9f0f5; border-radius: 6px; border: 1px solid #cdd3d8; margin-bottom: 12px;">
                                 This list includes only the materials that are part of the project BOQ and have undergone movement, whether ordered or consumed on site.
                             </div>
 
-
-
+                            <!-- LIST VIEW -->
                             <field name="boq_line_ids">
-                                <list editable="bottom" align="center" class="text-center">
-                                    <field name="item" width="250px" class="text-center" align="center"/>
-                                    <field name="unit" width="100px" class="text-center" align="center"/>
-                                    <field name="type_of_material" width="150px" class="text-center" align="center"/>
-                                    <field name="quantity_needed" width="100px" class="text-center" align="center"/>
-                                    <field name="quantity_consumed" width="100px" class="text-center" align="center" attrs="{'invisible': [('quantity_consumed', '=', 0)]}"/>
-                                    <field name="quantity_ordered" width="100px" class="text-center" align="center" attrs="{'invisible': [('quantity_ordered', '=', 0)]}"/>
-                                    <field name="balance_to_order" width="100px" class="text-center" align="center"/>
-                                    <field name="balance_to_use" width="100px" class="text-center" align="center"/>
-                                    <field name="stock" width="100px" class="text-center" align="center"/>
-                                </list>
+                                <tree class="o_list_view table-sm" editable="bottom">
+                                    <field name="item" string="Item" class="text-center"/>
+                                    <field name="unit" string="Unit" class="text-center"/>
+                                    <field name="type_of_material" string="Type" class="text-center"/>
+                                    <field name="quantity_needed" string="Qty Needed" class="text-center"/>
+                                    <field name="quantity_consumed" string="Consumed" class="text-center"
+                                           attrs="{'invisible': [('quantity_consumed','=',0)]}"/>
+                                    <field name="quantity_ordered" string="Ordered" class="text-center"
+                                           attrs="{'invisible': [('quantity_ordered','=',0)]}"/>
+                                    <field name="balance_to_order" string="Balance to Order" class="text-center"/>
+                                    <field name="balance_to_use" string="Balance to Use" class="text-center"/>
+                                    <field name="stock" string="Stock" class="text-center"/>
+                                </tree>
+                                <!-- FORM VIEW FOR ONE2MANY -->
+                                <form>
+                                    <group col="3" class="o_inner_group" style="gap:8px;">
+
+                                        <!-- BOX 1 -->
+                                        <group style="border:1px solid #d5d5d5; border-radius:8px; padding:10px; background:#fafafa;">
+                                            <label string="BOQ Item Info" class="text-center" style="font-weight:600; margin-bottom:8px;"/>
+                                            <field name="item" class="text-center"/>
+                                            <field name="unit" class="text-center"/>
+                                            <field name="type_of_material" class="text-center"/>
+                                        </group>
+
+                                        <!-- BOX 2 -->
+                                        <group style="border:1px solid #d5d5d5; border-radius:8px; padding:10px; background:#fafafa;">
+                                            <label string="Quantity Movement" class="text-center" style="font-weight:600; margin-bottom:8px;"/>
+                                            <field name="quantity_needed" class="text-center"/>
+                                            <field name="quantity_consumed" class="text-center" 
+                                                   attrs="{'invisible':[('quantity_consumed','=',0)]}"/>
+                                            <field name="quantity_ordered" class="text-center" 
+                                                   attrs="{'invisible':[('quantity_ordered','=',0)]}"/>
+                                        </group>
+
+                                        <!-- BOX 3 -->
+                                        <group style="border:1px solid #d5d5d5; border-radius:8px; padding:10px; background:#fafafa;">
+                                            <label string="Summary" class="text-center" style="font-weight:600; margin-bottom:8px;"/>
+                                            <field name="balance_to_order" class="text-center" readonly="1"/>
+                                            <field name="balance_to_use" class="text-center" readonly="1"/>
+                                            <field name="stock" class="text-center" readonly="1"/>
+                                        </group>
+
+                                    </group>
+                                </form>
                             </field>
                         </page>
+
                     </notebook>
                 </sheet>
             </form>
