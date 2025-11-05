@@ -24,6 +24,7 @@
                             </div>
 
 
+
                             <field name="line_ids">
                                 <list editable="bottom" align="center" class="text-center">
                                     <field name="item" width="250px" class="text-center" align="center"/>
@@ -46,6 +47,7 @@
                                 style="text-align: center; font-weight: 700; font-size: 15px; padding: 14px; background: #f8f9fa; border-radius: 6px; border: 1px solid #ddd; margin-bottom: 10px;">
                                 This list includes only the materials that are part of the project BOQ and have undergone movement, whether ordered or consumed on site.
                             </div>
+
 
 
                             <field name="boq_line_ids">
