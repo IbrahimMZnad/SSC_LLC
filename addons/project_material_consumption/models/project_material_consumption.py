@@ -285,7 +285,8 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
             if rec.item and rec.consumption_id.name and rec.consumption_id.company_id:
                 orders = self.env['purchase.order'].search([
                     ('x_studio_project', '=', rec.consumption_id.name.id),
-                    ('company_id', '=', rec.consumption_id.company_id.id)
+                    ('company_id', '=', rec.consumption_id.company_id.id),
+                    ('state', 'in', ['purchase', 'done'])
                 ])
                 for order in orders:
                     if hasattr(order, 'order_line'):
