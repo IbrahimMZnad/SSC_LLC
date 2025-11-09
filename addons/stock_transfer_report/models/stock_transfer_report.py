@@ -13,24 +13,45 @@ class StockTransferReport(models.Model):
 
     def fill_lines_from_transactions(self):
         Transaction = self.env['x_transaction']
-        all_stores = self.env['x_inventory_stores_pro'].search([])
+        Store = self.env['x_inventory_stores_pro']
 
-        for store in all_stores:
-           
-            report = self.create({'store': store.id})
+        # استخرج كل العمليات Transfer بالحالة المطلوبة
+        transactions = Transaction.search([
+            ('x_studio_type_of_transaction', '=', 'Transfer'),
+            ('x_studio_selection_field_64t_1ipgtrlhm', '=', 'status2')
+        ])
 
-            transactions = Transaction.search([
-                ('x_studio_type_of_transaction', '=', 'Transfer'),
-                ('x_studio_selection_field_64t_1ipgtrlhm', '=', 'status2'),
-                '|',
-                ('x_studio_store', '=', store.id),
-                ('x_studio_from_store', '=', store.id)
-            ])
+        # إذا ما في عمليات خلص
+        if not transactions:
+            return
 
-            for tx in transactions:
+        # استخرج كل المخازن اللي شاركت بأي عملية
+        involved_stores = Store.search([
+            '|',
+            ('id', 'in', transactions.mapped('x_studio_store').ids),
+            ('id', 'in', transactions.mapped('x_studio_from_store').ids)
+        ])
+
+        for store in involved_stores:
+
+            # نشوف إذا فيه تقرير سابق لهالمخزن
+            report = self.search([('store', '=', store.id)], limit=1)
+
+            # إذا ما فيه → ننشئ تقرير جديد
+            if not report:
+                report = self.create({'store': store.id})
+
+            # نجيب عمليات هالمخزن فقط
+            store_transactions = transactions.filtered(
+                lambda t: t.x_studio_store.id == store.id or t.x_studio_from_store.id == store.id
+            )
+
+            # أضف السطور سواء Incoming أو Outgoing
+            for tx in store_transactions:
                 for line in tx.x_studio_transfering_details:
-                    
+
                     if tx.x_studio_from_store.id == store.id:
+                        # خروج من المخزن
                         self.env['stock.transfer.line'].create({
                             'transfer_out_id': report.id,
                             'description': 'to ' + (tx.x_studio_store.x_name or ''),
@@ -41,6 +62,7 @@ class StockTransferReport(models.Model):
                         })
 
                     elif tx.x_studio_store.id == store.id:
+                        # دخول للمخزن
                         self.env['stock.transfer.line'].create({
                             'transfer_in_id': report.id,
                             'description': 'from ' + (tx.x_studio_from_store.x_name or ''),
@@ -49,11 +71,6 @@ class StockTransferReport(models.Model):
                             'quantity': line.x_studio_quantity,
                             'notes': tx.x_studio_remarks_4,
                         })
-
-    def action_fetch_transactions(self):
-        """Button action to fetch transactions and fill lines"""
-        self.fill_lines_from_transactions()
-        return True
 
 
 class StockTransferLine(models.Model):
