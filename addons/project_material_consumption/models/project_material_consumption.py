@@ -63,7 +63,8 @@ class ProjectMaterialConsumption(models.Model):
             ordered_ids = []
             orders = PurchaseOrders.search([
                 ('x_studio_project', '=', rec.name.id),
-                ('company_id', '=', rec.company_id.id)
+                ('company_id', '=', rec.company_id.id),
+                ('state', 'in', ['purchase', 'done'])
             ])
             for order in orders:
                 ordered_ids += [ln.x_studio_item.id for ln in order.order_line if ln.x_studio_item]
