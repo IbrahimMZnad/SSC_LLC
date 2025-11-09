@@ -8,7 +8,6 @@
     'depends': ['base'],
     'data': [
         'views/stock_transfer_report_views.xml',
-        'data/stock_transfer_cron.xml',
     ],
     'installable': True,
     'application': True,

@@ -1,114 +1,97 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <odoo>
+    <data>
 
-    <!-- ================= FORM VIEW ================= -->
-    <record id="view_project_material_consumption_form" model="ir.ui.view">
-        <field name="name">project.material.consumption.form</field>
-        <field name="model">project.material.consumption</field>
-        <field name="arch" type="xml">
-            <form string="Project Material Consumption">
-                <sheet>
-                    <!-- HEADER SECTION -->
-                    <group>
-                        <field name="name"/>
-                        <field name="company_id"/>
-                    </group>
+        <!-- ========================= FORM VIEW ========================= -->
+        <record id="view_stock_transfer_report_form" model="ir.ui.view">
+            <field name="name">stock.transfer.report.form</field>
+            <field name="model">stock.transfer.report</field>
+            <field name="arch" type="xml">
+                <form string="Stock Transfer Report" create="true" edit="true" class="oe_background_grey">
+                    <sheet style="background-color:#f9fafb; padding:25px; border-radius:12px;">
 
-                    <!-- NOTEBOOK SECTION -->
-                    <notebook>
-                        <!-- PAGE 1: MATERIALS -->
-                        <page string="Materials" style="background-color:#ffffff; padding:15px;">
-                            <!-- SPAN TITLE -->
-                            <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
-                                MATERIALS DETAILS
-                            </div>
+                        <!-- HEADER SECTION -->
+                        <group string="Report Information" col="2" 
+                               style="background-color:#eef3f7; padding:12px; border-radius:8px; margin-bottom:15px;">
+                            <field name="store" nolabel="0"/>
+                            <field name="company" nolabel="0"/>
+                        </group>
 
-                            <field name="line_ids" nolabel="1" widget="sol_o2m">
-                                <list editable="bottom" create="false" delete="false" multi_edit="false">
-                                    <field optional="show" name="item" width="250" class="text-center" align="center"/>
-                                    <field optional="show" name="unit" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="type_of_material" width="150" class="text-center" align="center"/>
-                                    <field optional="show" name="quantity_needed" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="quantity_consumed" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="quantity_ordered" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="balance_to_order" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="balance_to_use" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="stock" width="100" class="text-center" align="center"/>
-                                </list>
-                                <form>
-                                    <group>
-                                        <field name="item"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="quantity_needed"/>
-                                        <field name="quantity_consumed"/>
-                                        <field name="quantity_ordered"/>
-                                        <field name="balance_to_order"/>
-                                        <field name="balance_to_use"/>
-                                        <field name="stock"/>
-                                    </group>
-                                </form>
-                            </field>
-                        </page>
+                        <!-- FETCH BUTTON -->
+                        <group style="text-align:center; margin-bottom:20px;">
+                            <button name="action_fetch_transactions"
+                                    string="🔄 Fetch All Transactions"
+                                    type="object"
+                                    class="btn-primary"
+                                    style="background-color:#2874A6; color:white; font-weight:bold; 
+                                           border-radius:6px; padding:8px 18px;"/>
+                        </group>
 
-                        <!-- PAGE 2: BOQ LINES -->
-                        <page string="BOQ Lines" style="background-color:#ffffff; padding:15px;">
-                            <!-- SPAN TITLE -->
-                            <div class="o_field_widget text-center" 
-                                 style="text-decoration: underline; font-weight: bold; line-height: 1.5; padding: 10px;">
-                                BOQ LINES DETAILS
-                            </div>
+                        <!-- NOTEBOOK PAGES -->
+                        <notebook>
 
-                            <field name="boq_line_ids" nolabel="1" widget="sol_o2m">
-                                <list editable="bottom" create="false" delete="false" multi_edit="false">
-                                    <field optional="show" name="item" width="250" class="text-center" align="center"/>
-                                    <field optional="show" name="unit" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="type_of_material" width="150" class="text-center" align="center"/>
-                                    <field optional="show" name="quantity_needed" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="quantity_consumed" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="quantity_ordered" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="balance_to_order" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="balance_to_use" width="100" class="text-center" align="center"/>
-                                    <field optional="show" name="stock" width="100" class="text-center" align="center"/>
-                                </list>
-                                <form>
-                                    <group>
-                                        <field name="item"/>
-                                        <field name="unit"/>
-                                        <field name="type_of_material"/>
-                                        <field name="quantity_needed"/>
-                                        <field name="quantity_consumed"/>
-                                        <field name="quantity_ordered"/>
-                                        <field name="balance_to_order"/>
-                                        <field name="balance_to_use"/>
-                                        <field name="stock"/>
-                                    </group>
-                                </form>
-                            </field>
-                        </page>
-                    </notebook>
-                </sheet>
-            </form>
-        </field>
-    </record>
+                            <!-- ========================= OUTGOING LINES ========================= -->
+                            <page string="📦 Outgoing Lines" 
+                                  style="background-color:#ffffff; padding:15px; border-radius:10px;">
+                                <separator string="Outgoing Materials" 
+                                           style="color:#1F618D; font-weight:bold; margin-bottom:10px;"/>
+                                <field name="outgoing_lines" nolabel="1" widget="sol_o2m">
+                                    <list editable="bottom" create="false" delete="false" multi_edit="false" 
+                                          style="background-color:#fbfcfd;">
+                                        <field name="description" width="150" class="text-center" align="center"/>
+                                        <field name="item" width="150" class="text-center" align="center"/>
+                                        <field name="item_serial_no" width="120" class="text-center" align="center"/>
+                                        <field name="unit" width="100" class="text-center" align="center"/>
+                                        <field name="type_of_material" width="120" class="text-center" align="center"/>
+                                        <field name="date" width="120" class="text-center" align="center"/>
+                                        <field name="quantity" width="100" class="text-center" align="center"/>
+                                        <field name="notes" width="250" class="text-center" align="center"/>
+                                    </list>
+                                </field>
+                            </page>
 
-    <!-- ================= ACTIONS ================= -->
-    <record id="action_project_materials_list" model="ir.actions.act_window">
-        <field name="name">Materials</field>
-        <field name="res_model">project.material.consumption.line</field>
-        <field name="view_mode">list,form</field>
-    </record>
+                            <!-- ========================= INCOMING LINES ========================= -->
+                            <page string="📥 Incoming Lines" 
+                                  style="background-color:#ffffff; padding:15px; border-radius:10px;">
+                                <separator string="Incoming Materials" 
+                                           style="color:#117864; font-weight:bold; margin-bottom:10px;"/>
+                                <field name="incoming_lines" nolabel="1" widget="sol_o2m">
+                                    <list editable="bottom" create="false" delete="false" multi_edit="false" 
+                                          style="background-color:#fbfcfd;">
+                                        <field name="description" width="150" class="text-center" align="center"/>
+                                        <field name="item" width="150" class="text-center" align="center"/>
+                                        <field name="item_serial_no" width="120" class="text-center" align="center"/>
+                                        <field name="unit" width="100" class="text-center" align="center"/>
+                                        <field name="type_of_material" width="120" class="text-center" align="center"/>
+                                        <field name="date" width="120" class="text-center" align="center"/>
+                                        <field name="quantity" width="100" class="text-center" align="center"/>
+                                        <field name="notes" width="250" class="text-center" align="center"/>
+                                    </list>
+                                </field>
+                            </page>
 
-    <record id="action_project_boq_list" model="ir.actions.act_window">
-        <field name="name">BOQ Lines</field>
-        <field name="res_model">project.material.consumption.boq.line</field>
-        <field name="view_mode">list,form</field>
-    </record>
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
 
-    <!-- ================= MENU ================= -->
-    <menuitem id="menu_project_material_consumption_root" name="Project Material Consumption"/>
-    <menuitem id="menu_project_materials" name="Materials" parent="menu_project_material_consumption_root" action="action_project_materials_list"/>
-    <menuitem id="menu_project_boq" name="BOQ Lines" parent="menu_project_material_consumption_root" action="action_project_boq_list"/>
+        <!-- ========================= ACTION ========================= -->
+        <record id="action_stock_transfer_report" model="ir.actions.act_window">
+            <field name="name">Stock Transfer Report</field>
+            <field name="res_model">stock.transfer.report</field>
+            <field name="view_mode">form,list</field>
+            <field name="view_id" ref="view_stock_transfer_report_form"/>
+        </record>
 
+        <!-- ========================= MENU ========================= -->
+        <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer" sequence="10"/>
+
+        <menuitem id="menu_stock_transfer_report"
+                  name="Transfer Reports"
+                  parent="menu_stock_transfer_report_root"
+                  action="action_stock_transfer_report"
+                  sequence="20"/>
+
+    </data>
 </odoo>
