@@ -17,16 +17,6 @@
                             <field name="company" nolabel="0"/>
                         </group>
 
-                        <!-- FETCH BUTTON -->
-                        <group style="text-align:center; margin-bottom:20px;">
-                            <button name="action_fetch_transactions"
-                                    string="🔄 Fetch All Transactions"
-                                    type="object"
-                                    class="btn-primary"
-                                    style="background-color:#2874A6; color:white; font-weight:bold; 
-                                           border-radius:6px; padding:8px 18px;"/>
-                        </group>
-
                         <!-- NOTEBOOK PAGES -->
                         <notebook>
 
