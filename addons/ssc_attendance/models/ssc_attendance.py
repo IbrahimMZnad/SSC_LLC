@@ -118,12 +118,9 @@ class SSCAttendance(models.Model):
         errors = []
 
         Employee = self.env['x_employeeslist']
-        # Build badge map once for performance
-        badge_map = {}
-        for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
-            badge_map[self._normalize_badge(emp.x_studio_attendance_id or '')] = emp
+        badge_map = {self._normalize_badge(emp.x_studio_attendance_id or ''): emp
+                     for emp in Employee.search([('x_studio_attendance_id', '!=', False)])}
 
-        # Loop over all existing attendance records
         for attendance in self.search([]):
             start_dt_utc = datetime.combine(attendance.date, datetime.min.time()).replace(tzinfo=pytz.utc)
             end_dt_utc = datetime.combine(attendance.date, datetime.max.time()).replace(tzinfo=pytz.utc)
@@ -146,7 +143,6 @@ class SSCAttendance(models.Model):
                     transactions = []
 
                 groups = defaultdict(list)
-
                 for trx in transactions:
                     total_records += 1
                     verify_type = (trx.get("VerifyType") or '').strip()
@@ -159,7 +155,6 @@ class SSCAttendance(models.Model):
                         errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
                         continue
 
-                    # parse verify_time_str into a datetime
                     verify_dt = None
                     try:
                         verify_dt = datetime.fromisoformat(verify_time_str)
@@ -174,7 +169,6 @@ class SSCAttendance(models.Model):
                         errors.append(f"Unparseable VerifyTime: {verify_time_str}")
                         continue
 
-                    # If naive, assume SERVER_TZ (Asia/Dubai); if tz-aware, respect it
                     if verify_dt.tzinfo is None:
                         try:
                             verify_dt = SERVER_TZ.localize(verify_dt)
@@ -201,55 +195,37 @@ class SSCAttendance(models.Model):
                 for (badge_clean, v_date), events in groups.items():
                     try:
                         events_sorted = sorted(events, key=lambda x: x[0])
-                        if len(events_sorted) == 1:
-                            first_dt_utc = last_dt_utc = events_sorted[0][0]
-                        else:
-                            first_dt_utc = events_sorted[0][0]
-                            last_dt_utc = events_sorted[-1][0]
+                        first_dt_utc = events_sorted[0][0]
+                        last_dt_utc = events_sorted[-1][0] if len(events_sorted) > 1 else first_dt_utc
 
                         device_events = defaultdict(list)
                         for dt, device, _ in events_sorted:
                             device_key = device or ''
                             device_events[device_key].append(dt)
 
-                        device_spans = {}
-                        for dev, dts in device_events.items():
-                            if not dts:
-                                device_spans[dev] = timedelta(0)
-                            else:
-                                device_spans[dev] = max(dts) - min(dts)
+                        device_spans = {dev: max(dts) - min(dts) if dts else timedelta(0)
+                                        for dev, dts in device_events.items()}
 
-                        chosen_device = ''
-                        if device_spans:
-                            chosen_device = max(
-                                device_spans.items(),
-                                key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min)
-                            )[0]
+                        chosen_device = max(device_spans.items(),
+                                            key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min))[0] \
+                            if device_spans else ''
+
+                        employee = employee_cache.get(badge_clean) or badge_map.get(badge_clean)
+                        if employee:
+                            employee_cache[badge_clean] = employee
+                            matched_employee += 1
                         else:
-                            chosen_device = ''
-
-                        employee = employee_cache.get(badge_clean)
-                        if not employee:
-                            emp_found = badge_map.get(badge_clean)
-                            if emp_found:
-                                employee_cache[badge_clean] = emp_found
-                                employee = emp_found
-
-                        if not employee:
                             errors.append(f"No employee match for badge {badge_clean} on {v_date}")
                             continue
-                        matched_employee += 1
 
-                        attendance = attendance_cache.get(v_date)
+                        attendance = attendance_cache.get(v_date) or self.search([('date', '=', v_date)], limit=1)
                         if not attendance:
-                            attendance = self.search([('date', '=', v_date)], limit=1)
-                            if not attendance:
-                                attendance = self.create({
-                                    'name': str(v_date),
-                                    'date': v_date,
-                                    'type': 'Off Day' if v_date.weekday() == 4 else 'Regular Day'
-                                })
-                            attendance_cache[v_date] = attendance
+                            attendance = self.create({
+                                'name': str(v_date),
+                                'date': v_date,
+                                'type': 'Off Day' if v_date.weekday() == 4 else 'Regular Day'
+                            })
+                        attendance_cache[v_date] = attendance
                         matched_attendance += 1
 
                         first_punch_str = fields.Datetime.to_string(first_dt_utc)
@@ -265,16 +241,11 @@ class SSCAttendance(models.Model):
                             'punch_machine_id': chosen_device or '',
                             'error_note': None
                         }
+
                         existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
                         if existing_line:
-                            try:
-                                existing_first_dt = fields.Datetime.from_string(existing_line.first_punch) if existing_line.first_punch else None
-                            except Exception:
-                                existing_first_dt = None
-                            try:
-                                existing_last_dt = fields.Datetime.from_string(existing_line.last_punch) if existing_line.last_punch else None
-                            except Exception:
-                                existing_last_dt = None
+                            existing_first_dt = fields.Datetime.from_string(existing_line.first_punch) if existing_line.first_punch else None
+                            existing_last_dt = fields.Datetime.from_string(existing_line.last_punch) if existing_line.last_punch else None
 
                             chosen_first_dt = min([d for d in (existing_first_dt, first_dt_utc) if d is not None])
                             chosen_last_dt = max([d for d in (existing_last_dt, last_dt_utc) if d is not None])
@@ -318,17 +289,6 @@ class SSCAttendance(models.Model):
     # Transfer to x_daily_attendance
     # -------------------------
     def transfer_to_x_daily_attendance(self):
-        """
-        Transfer lines from ssc.attendance -> x_daily_attendance according to:
-        - find x_daily_attendance where x_studio_todays_date == attendance.date
-        - and company match: company_id in line == x_studio_company in x_daily_attendance
-        - if type == 'Regular Day' -> transfer to x_studio_attendance_sheet
-            * match/compare x_studio_id with attendance_id
-            * set x_studio_absent, x_studio_project, x_studio_overtime_hrs = total_ot
-        - if type == 'Off Day' -> transfer to x_studio_off_days_attendance_sheet
-            * match x_studio_id with attendance_id
-            * set x_studio_project, x_studio_overtime_hrs = total_time + total_ot
-        """
         Daily = self.env['x_daily_attendance']
         for attendance in self:
             for line in attendance.line_ids:
@@ -428,19 +388,13 @@ class SSCAttendanceLine(models.Model):
     def _compute_total_time(self):
         for rec in self:
             if rec.first_punch and rec.last_punch:
-                # احسب الفرق بين وقت الدخول والخروج
                 delta = rec.last_punch - rec.first_punch
                 hours = delta.total_seconds() / 3600.0
-
-                # إذا الخروج بعد الساعة 2 ظهرًا خصم ساعة استراحة
                 if rec.last_punch.hour >= 14:
                     hours -= 1.0
-
-                # إذا كانت الساعات أكثر من 8، نخزن فقط 8 في total_time
                 rec.total_time = 8.0 if hours > 8.0 else hours
             else:
                 rec.total_time = 0.0
-
 
     @api.depends('first_punch', 'last_punch')
     def _compute_total_ot(self):
@@ -448,16 +402,11 @@ class SSCAttendanceLine(models.Model):
             if rec.first_punch and rec.last_punch:
                 delta = rec.last_punch - rec.first_punch
                 hours = delta.total_seconds() / 3600.0
-
-                # إذا الخروج بعد الساعة 2 ظهرًا خصم ساعة استراحة
                 if rec.last_punch.hour >= 14:
                     hours -= 1.0
-
-                # الأوفر تايم هو أي شيء فوق 8 ساعات بعد خصم ساعة الاستراحة
                 rec.total_ot = hours - 8.0 if hours > 8.0 else 0.0
             else:
                 rec.total_ot = 0.0
-
 
     @api.depends('first_punch', 'employee_id')
     def _compute_absent(self):
@@ -465,19 +414,16 @@ class SSCAttendanceLine(models.Model):
             if rec.on_leave:
                 rec.absent = False
             elif rec.external_id and rec.external_id.date and rec.external_id.date.weekday() == 4:
-                # الجمعة ما تنحسب غياب
                 rec.absent = False
             else:
-                # إذا ما في بصمة دخول = غياب
                 rec.absent = not bool(rec.first_punch)
-
 
     @api.depends('employee_id')
     def _compute_staff(self):
         for rec in self:
-            rec.staff = rec.employee_id.x_studio_engineeroffice_staff if rec.employee_id else False
+            rec.staff = getattr(rec.employee_id, 'x_studio_engineeroffice_staff', False)
 
     @api.depends('employee_id')
     def _compute_on_leave(self):
         for rec in self:
-            rec.on_leave = rec.employee_id.x_studio_on_leave if rec.employee_id else False
+            rec.on_leave = getattr(rec.employee_id, 'x_studio_on_leave', False)
