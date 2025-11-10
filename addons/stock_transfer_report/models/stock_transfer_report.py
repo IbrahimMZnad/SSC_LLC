@@ -15,17 +15,16 @@ class StockTransferReport(models.Model):
         Transaction = self.env['x_transaction']
         Store = self.env['x_inventory_stores_pro']
 
-        # استخرج كل العمليات Transfer بالحالة المطلوبة
+        # استخرج عمليات Transfer بالحالة المطلوبة
         transactions = Transaction.search([
             ('x_studio_type_of_transaction', '=', 'Transfer'),
             ('x_studio_selection_field_64t_1ipgtrlhm', '=', 'status2')
         ])
 
-        # إذا ما في عمليات خلص
         if not transactions:
             return
 
-        # استخرج كل المخازن اللي شاركت بأي عملية
+        # استخرج المخازن المشاركة
         involved_stores = Store.search([
             '|',
             ('id', 'in', transactions.mapped('x_studio_store').ids),
@@ -34,43 +33,61 @@ class StockTransferReport(models.Model):
 
         for store in involved_stores:
 
-            # نشوف إذا فيه تقرير سابق لهالمخزن
             report = self.search([('store', '=', store.id)], limit=1)
 
-            # إذا ما فيه → ننشئ تقرير جديد
             if not report:
                 report = self.create({'store': store.id})
 
-            # نجيب عمليات هالمخزن فقط
             store_transactions = transactions.filtered(
                 lambda t: t.x_studio_store.id == store.id or t.x_studio_from_store.id == store.id
             )
 
-            # أضف السطور سواء Incoming أو Outgoing
+            # ✅ إضافة السطور بدون تكرار
             for tx in store_transactions:
                 for line in tx.x_studio_transfering_details:
 
+                    vals = {
+                        'item': line.x_studio_item.id,
+                        'date': tx.x_studio_date_2,
+                        'quantity': line.x_studio_quantity,
+                        'notes': tx.x_studio_remarks_4,
+                    }
+
+                    # خروج من المخزن
                     if tx.x_studio_from_store.id == store.id:
-                        # خروج من المخزن
-                        self.env['stock.transfer.line'].create({
+                        vals.update({
                             'transfer_out_id': report.id,
                             'description': 'to ' + (tx.x_studio_store.x_name or ''),
-                            'item': line.x_studio_item.id,
-                            'date': tx.x_studio_date_2,
-                            'quantity': line.x_studio_quantity,
-                            'notes': tx.x_studio_remarks_4,
                         })
 
+                        existing = self.env['stock.transfer.line'].search([
+                            ('transfer_out_id', '=', report.id),
+                            ('item', '=', line.x_studio_item.id),
+                            ('date', '=', tx.x_studio_date_2),
+                            ('quantity', '=', line.x_studio_quantity),
+                            ('description', '=', 'to ' + (tx.x_studio_store.x_name or '')),
+                        ], limit=1)
+
+                        if not existing:
+                            self.env['stock.transfer.line'].create(vals)
+
+                    # دخول إلى المخزن
                     elif tx.x_studio_store.id == store.id:
-                        # دخول للمخزن
-                        self.env['stock.transfer.line'].create({
+                        vals.update({
                             'transfer_in_id': report.id,
                             'description': 'from ' + (tx.x_studio_from_store.x_name or ''),
-                            'item': line.x_studio_item.id,
-                            'date': tx.x_studio_date_2,
-                            'quantity': line.x_studio_quantity,
-                            'notes': tx.x_studio_remarks_4,
                         })
+
+                        existing = self.env['stock.transfer.line'].search([
+                            ('transfer_in_id', '=', report.id),
+                            ('item', '=', line.x_studio_item.id),
+                            ('date', '=', tx.x_studio_date_2),
+                            ('quantity', '=', line.x_studio_quantity),
+                            ('description', '=', 'from ' + (tx.x_studio_from_store.x_name or '')),
+                        ], limit=1)
+
+                        if not existing:
+                            self.env['stock.transfer.line'].create(vals)
 
 
 class StockTransferLine(models.Model):
