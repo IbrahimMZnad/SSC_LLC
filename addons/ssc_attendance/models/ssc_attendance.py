@@ -19,9 +19,6 @@ class SSCAttendance(models.Model):
         ('unique_date', 'unique(date)', 'Attendance record already exists for this date!')
     ]
 
-    # -------------------------
-    # الحقول الأساسية / Main Fields
-    # -------------------------
     name = fields.Char(string="Name", required=True, default=lambda self: str(date.today()))
     date = fields.Date(string="Date", default=fields.Date.context_today)
     type = fields.Selection(
@@ -32,17 +29,11 @@ class SSCAttendance(models.Model):
     day_name = fields.Char(string="Day Name", compute="_compute_day_name", store=True)
     line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
 
-    # -------------------------
-    # دالة لحساب اسم اليوم / Compute day name
-    # -------------------------
     @api.depends('date')
     def _compute_day_name(self):
         for rec in self:
             rec.day_name = rec.date.strftime('%A') if rec.date else ''
 
-    # -------------------------
-    # إنشاء سجل يومي تلقائي / Auto-create daily attendance
-    # -------------------------
     @api.model
     def create_daily_attendance(self):
         today = fields.Date.context_today(self)
@@ -62,9 +53,6 @@ class SSCAttendance(models.Model):
                 self.create(vals)
             current_date += timedelta(days=1)
 
-    # -------------------------
-    # Override create to populate lines if not provided
-    # -------------------------
     @api.model
     def create(self, vals):
         record = super().create(vals)
@@ -72,9 +60,6 @@ class SSCAttendance(models.Model):
             record._populate_lines()
         return record
 
-    # -------------------------
-    # تعبئة خطوط الحضور تلقائي للموظفين / Populate attendance lines for employees
-    # -------------------------
     def _populate_lines(self):
         self.ensure_one()
         Employee = self.env['x_employeeslist']
@@ -91,25 +76,19 @@ class SSCAttendance(models.Model):
         if lines:
             self.write({'line_ids': lines})
 
-    # -------------------------
-    # Normalize badge number
-    # -------------------------
     def _normalize_badge(self, s):
         if not s:
             return ''
         return re.sub(r'[^A-Za-z0-9]', '', str(s)).upper()
 
-    # -------------------------
-    # Fetch BioCloud Data for all existing ssc.attendance records
-    # -------------------------
     def fetch_bioclock_data(self):
-        """
-        Fetch transactions from BioCloud for all existing ssc.attendance records
-        based on their attendance.date
-        """
+        """Fetch transactions from BioCloud only for today's date"""
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"token": token, "Content-Type": "application/json"}
+
+        today = fields.Date.context_today(self)
+        attendance_records = self.search([('date', '=', today)])
 
         synced_count = 0
         total_records = 0
@@ -121,7 +100,7 @@ class SSCAttendance(models.Model):
         badge_map = {self._normalize_badge(emp.x_studio_attendance_id or ''): emp
                      for emp in Employee.search([('x_studio_attendance_id', '!=', False)])}
 
-        for attendance in self.search([]):
+        for attendance in attendance_records:
             start_dt_utc = datetime.combine(attendance.date, datetime.min.time()).replace(tzinfo=pytz.utc)
             end_dt_utc = datetime.combine(attendance.date, datetime.max.time()).replace(tzinfo=pytz.utc)
             payload = {
@@ -175,10 +154,7 @@ class SSCAttendance(models.Model):
                         except Exception:
                             verify_dt = pytz.utc.localize(verify_dt)
                     else:
-                        try:
-                            verify_dt = verify_dt.astimezone(pytz.utc).astimezone(verify_dt.tzinfo)
-                        except Exception:
-                            verify_dt = pytz.utc.localize(verify_dt.replace(tzinfo=None))
+                        verify_dt = verify_dt.astimezone(pytz.utc)
 
                     verify_dt_server = verify_dt.astimezone(SERVER_TZ)
                     verify_date = verify_dt_server.date()
@@ -247,6 +223,18 @@ class SSCAttendance(models.Model):
                             existing_first_dt = fields.Datetime.from_string(existing_line.first_punch) if existing_line.first_punch else None
                             existing_last_dt = fields.Datetime.from_string(existing_line.last_punch) if existing_line.last_punch else None
 
+                            def to_utc_aware(dt):
+                                if not dt:
+                                    return None
+                                if dt.tzinfo is None:
+                                    return pytz.utc.localize(dt)
+                                return dt.astimezone(pytz.utc)
+
+                            existing_first_dt = to_utc_aware(existing_first_dt)
+                            existing_last_dt = to_utc_aware(existing_last_dt)
+                            first_dt_utc = to_utc_aware(first_dt_utc)
+                            last_dt_utc = to_utc_aware(last_dt_utc)
+
                             chosen_first_dt = min([d for d in (existing_first_dt, first_dt_utc) if d is not None])
                             chosen_last_dt = max([d for d in (existing_last_dt, last_dt_utc) if d is not None])
 
@@ -281,58 +269,6 @@ class SSCAttendance(models.Model):
                            f'Matched attendance days: {matched_attendance} Matched employees: {matched_employee} '
                            f'Errors: {len(errors)}',
                 'type': 'success' if synced_count > 0 else 'warning',
-                'sticky': False,
-            }
-        }
-
-    # -------------------------
-    # Transfer to x_daily_attendance
-    # -------------------------
-    def transfer_to_x_daily_attendance(self):
-        Daily = self.env['x_daily_attendance']
-        for attendance in self:
-            for line in attendance.line_ids:
-                if not line.company_id:
-                    continue
-                parent = Daily.search([
-                    ('x_studio_todays_date', '=', attendance.date),
-                    ('x_studio_company', '=', line.company_id.id)
-                ], limit=1)
-                if not parent:
-                    continue
-
-                if attendance.type == 'Regular Day':
-                    existing_sheet = parent.x_studio_attendance_sheet.filtered(lambda l: l.x_studio_id == (line.attendance_id or ''))
-                    vals = {
-                        'x_studio_id': line.attendance_id or '',
-                        'x_studio_absent': bool(line.absent),
-                        'x_studio_project': line.project_id.id if line.project_id else False,
-                        'x_studio_overtime_hrs': line.total_ot if line.total_ot else 0.0,
-                    }
-                    if existing_sheet:
-                        existing_sheet.write(vals)
-                    else:
-                        parent.write({'x_studio_attendance_sheet': [(0, 0, vals)]})
-
-                elif attendance.type == 'Off Day':
-                    existing_sheet = parent.x_studio_off_days_attendance_sheet.filtered(lambda l: l.x_studio_id == (line.attendance_id or ''))
-                    vals = {
-                        'x_studio_id': line.attendance_id or '',
-                        'x_studio_project': line.project_id.id if line.project_id else False,
-                        'x_studio_overtime_hrs': (line.total_time + line.total_ot) if (line.total_time or line.total_ot) else 0.0,
-                    }
-                    if existing_sheet:
-                        existing_sheet.write(vals)
-                    else:
-                        parent.write({'x_studio_off_days_attendance_sheet': [(0, 0, vals)]})
-
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': 'Transfer Finished',
-                'message': 'Transfer to x_daily_attendance completed.',
-                'type': 'success',
                 'sticky': False,
             }
         }
