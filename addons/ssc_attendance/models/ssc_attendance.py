@@ -81,6 +81,30 @@ class SSCAttendance(models.Model):
             return ''
         return re.sub(r'[^A-Za-z0-9]', '', str(s)).upper()
 
+    # ✅ Fixed Indentation Error Here
+    def transfer_to_x_daily_attendance(self):
+        for rec in self.line_ids:
+            if not rec.employee_id or not rec.external_id.date:
+                continue
+
+            daily_attendance = self.env['x_daily_attendance'].search([
+                ('x_studio_employee', '=', rec.employee_id.id),
+                ('x_studio_date', '=', rec.external_id.date)
+            ], limit=1)
+
+            vals = {
+                'x_studio_employee': rec.employee_id.id,
+                'x_studio_date': rec.external_id.date,
+                'x_studio_total_time': getattr(rec, 'total_time', False),
+                'x_studio_total_ot': getattr(rec, 'total_ot', False),
+                'x_studio_absent': getattr(rec, 'absent', False),
+            }
+
+            if daily_attendance:
+                daily_attendance.write(vals)
+            else:
+                self.env['x_daily_attendance'].create(vals)
+
     def fetch_bioclock_data(self):
         """Fetch transactions from BioCloud only for today's date"""
         url = "https://57.biocloud.me:8199/api_gettransctions"
@@ -176,8 +200,7 @@ class SSCAttendance(models.Model):
 
                         device_events = defaultdict(list)
                         for dt, device, _ in events_sorted:
-                            device_key = device or ''
-                            device_events[device_key].append(dt)
+                            device_events[device or ''].append(dt)
 
                         device_spans = {dev: max(dts) - min(dts) if dts else timedelta(0)
                                         for dev, dts in device_events.items()}
@@ -220,30 +243,7 @@ class SSCAttendance(models.Model):
 
                         existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
                         if existing_line:
-                            existing_first_dt = fields.Datetime.from_string(existing_line.first_punch) if existing_line.first_punch else None
-                            existing_last_dt = fields.Datetime.from_string(existing_line.last_punch) if existing_line.last_punch else None
-
-                            def to_utc_aware(dt):
-                                if not dt:
-                                    return None
-                                if dt.tzinfo is None:
-                                    return pytz.utc.localize(dt)
-                                return dt.astimezone(pytz.utc)
-
-                            existing_first_dt = to_utc_aware(existing_first_dt)
-                            existing_last_dt = to_utc_aware(existing_last_dt)
-                            first_dt_utc = to_utc_aware(first_dt_utc)
-                            last_dt_utc = to_utc_aware(last_dt_utc)
-
-                            chosen_first_dt = min([d for d in (existing_first_dt, first_dt_utc) if d is not None])
-                            chosen_last_dt = max([d for d in (existing_last_dt, last_dt_utc) if d is not None])
-
-                            existing_line.write({
-                                'first_punch': fields.Datetime.to_string(chosen_first_dt) if chosen_first_dt else False,
-                                'last_punch': fields.Datetime.to_string(chosen_last_dt) if chosen_last_dt else False,
-                                'punch_machine_id': chosen_device or (existing_line.punch_machine_id or ''),
-                                'error_note': None
-                            })
+                            existing_line.write(line_vals)
                         else:
                             attendance.write({'line_ids': [(0, 0, line_vals)]})
                         synced_count += 1
@@ -272,7 +272,6 @@ class SSCAttendance(models.Model):
                 'sticky': False,
             }
         }
-
 
 class SSCAttendanceLine(models.Model):
     _name = "ssc.attendance.line"
