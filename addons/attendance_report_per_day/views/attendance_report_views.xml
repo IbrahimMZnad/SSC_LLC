@@ -1,0 +1,188 @@
+<odoo>
+
+    <!-- ===================== -->
+    <!-- Main List View -->
+    <!-- ===================== -->
+    <record id="view_attendance_report_list" model="ir.ui.view">
+        <field name="name">attendance.report.list</field>
+        <field name="model">attendance.report.per.day</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="project_id"/>
+                <field name="date"/>
+                <field name="name"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ===================== -->
+    <!-- Main Form View -->
+    <!-- ===================== -->
+    <record id="view_attendance_report_form" model="ir.ui.view">
+        <field name="name">attendance.report.form</field>
+        <field name="model">attendance.report.per.day</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="project_id"/>
+                        <field name="date"/>
+                        <field name="name"/>
+                    </group>
+
+                    <group string="Visibility Control">
+                        <field name="show_ssc_labours_attendance" widget="boolean_toggle"/>
+                        <field name="show_ra_labours_attendance" widget="boolean_toggle"/>
+                        <field name="show_ssc_staff_attendance" widget="boolean_toggle"/>
+                        <field name="show_ra_staff_attendance" widget="boolean_toggle"/>
+                    </group>
+
+                    <notebook>
+
+                        <page string="SSC Labours Attendance"
+                              attrs="{'invisible': [('show_ssc_labours_attendance','=',False)]}">
+                            <field name="ssc_labours_attendance_ids" mode="list,form"/>
+                        </page>
+
+                        <page string="RA Labours Attendance"
+                              attrs="{'invisible': [('show_ra_labours_attendance','=',False)]}">
+                            <field name="ra_labours_attendance_ids" mode="list,form"/>
+                        </page>
+
+                        <page string="SSC Staff Attendance"
+                              attrs="{'invisible': [('show_ssc_staff_attendance','=',False)]}">
+                            <field name="ssc_staff_attendance_ids" mode="list,form"/>
+                        </page>
+
+                        <page string="RA Staff Attendance"
+                              attrs="{'invisible': [('show_ra_staff_attendance','=',False)]}">
+                            <field name="ra_staff_attendance_ids" mode="list,form"/>
+                        </page>
+
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ===================== -->
+    <!-- Lines Form & List Views for each model -->
+    <!-- ===================== -->
+
+    <!-- SSC Labour -->
+    <record id="view_ssc_labour_lines_list" model="ir.ui.view">
+        <field name="name">ssc.labours.attendance.lines.list</field>
+        <field name="model">ssc.labours.attendance.lines</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="employee_id"/>
+                <field name="employee_att_id"/>
+                <field name="first_punch"/>
+                <field name="last_punch"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ssc_labour_lines_form" model="ir.ui.view">
+        <field name="name">ssc.labours.attendance.lines.form</field>
+        <field name="model">ssc.labours.attendance.lines</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="employee_id"/>
+                    <field name="employee_att_id" readonly="1"/>
+                    <field name="first_punch"/>
+                    <field name="last_punch"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <!-- RA Labour -->
+    <record id="view_ra_labour_lines_list" model="ir.ui.view">
+        <field name="name">ra.labours.attendance.lines.list</field>
+        <field name="model">ra.labours.attendance.lines</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="employee_id"/>
+                <field name="employee_att_id"/>
+                <field name="first_punch"/>
+                <field name="last_punch"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ra_labour_lines_form" model="ir.ui.view">
+        <field name="name">ra.labours.attendance.lines.form</field>
+        <field name="model">ra.labours.attendance.lines</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="employee_id"/>
+                    <field name="employee_att_id" readonly="1"/>
+                    <field name="first_punch"/>
+                    <field name="last_punch"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <!-- SSC Staff -->
+    <record id="view_ssc_staff_lines_list" model="ir.ui.view">
+        <field name="name">ssc.staff.attendance.lines.list</field>
+        <field name="model">ssc.staff.attendance.lines</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="employee_id"/>
+                <field name="employee_att_id"/>
+                <field name="first_punch"/>
+                <field name="last_punch"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ssc_staff_lines_form" model="ir.ui.view">
+        <field name="name">ssc.staff.attendance.lines.form</field>
+        <field name="model">ssc.staff.attendance.lines</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="employee_id"/>
+                    <field name="employee_att_id" readonly="1"/>
+                    <field name="first_punch"/>
+                    <field name="last_punch"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <!-- RA Staff -->
+    <record id="view_ra_staff_lines_list" model="ir.ui.view">
+        <field name="name">ra.staff.attendance.lines.list</field>
+        <field name="model">ra.staff.attendance.lines</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="employee_id"/>
+                <field name="employee_att_id"/>
+                <field name="first_punch"/>
+                <field name="last_punch"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_ra_staff_lines_form" model="ir.ui.view">
+        <field name="name">ra.staff.attendance.lines.form</field>
+        <field name="model">ra.staff.attendance.lines</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="employee_id"/>
+                    <field name="employee_att_id" readonly="1"/>
+                    <field name="first_punch"/>
+                    <field name="last_punch"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+</odoo>
