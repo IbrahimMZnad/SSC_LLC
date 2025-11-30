@@ -1,0 +1,121 @@
+<odoo>
+    <record id="view_attendance_report_tree" model="ir.ui.view">
+        <field name="name">attendance.report.per.day.tree</field>
+        <field name="model">attendance.report.per.day</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="name"/>
+                <field name="project_id"/>
+                <field name="date"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_attendance_report_form" model="ir.ui.view">
+        <field name="name">attendance.report.per.day.form</field>
+        <field name="model">attendance.report.per.day</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="project_id"/>
+                        <field name="date"/>
+                        <field name="show_ssc_labours_attendance"/>
+                        <field name="show_ra_labours_attendance"/>
+                        <field name="show_ssc_staff_attendance"/>
+                        <field name="show_ra_staff_attendance"/>
+                    </group>
+
+                    <notebook>
+                        <page string="SSC Labours Attendance">
+                            <field name="ssc_labours_attendance_ids">
+                                <form>
+                                    <group>
+                                        <field name="employee_id"/>
+                                        <field name="employee_att_id"/>
+                                        <field name="first_punch"/>
+                                        <field name="last_punch"/>
+                                    </group>
+                                </form>
+                                <tree>
+                                    <field name="employee_id"/>
+                                    <field name="employee_att_id"/>
+                                    <field name="first_punch"/>
+                                    <field name="last_punch"/>
+                                </tree>
+                            </field>
+                        </page>
+
+                        <page string="RA Labours Attendance">
+                            <field name="ra_labours_attendance_ids">
+                                <form>
+                                    <group>
+                                        <field name="employee_id"/>
+                                        <field name="employee_att_id"/>
+                                        <field name="first_punch"/>
+                                        <field name="last_punch"/>
+                                    </group>
+                                </form>
+                                <tree>
+                                    <field name="employee_id"/>
+                                    <field name="employee_att_id"/>
+                                    <field name="first_punch"/>
+                                    <field name="last_punch"/>
+                                </tree>
+                            </field>
+                        </page>
+
+                        <page string="SSC Staff Attendance">
+                            <field name="ssc_staff_attendance_ids">
+                                <form>
+                                    <group>
+                                        <field name="employee_id"/>
+                                        <field name="employee_att_id"/>
+                                        <field name="first_punch"/>
+                                        <field name="last_punch"/>
+                                    </group>
+                                </form>
+                                <tree>
+                                    <field name="employee_id"/>
+                                    <field name="employee_att_id"/>
+                                    <field name="first_punch"/>
+                                    <field name="last_punch"/>
+                                </tree>
+                            </field>
+                        </page>
+
+                        <page string="RA Staff Attendance">
+                            <field name="ra_staff_attendance_ids">
+                                <form>
+                                    <group>
+                                        <field name="employee_id"/>
+                                        <field name="employee_att_id"/>
+                                        <field name="first_punch"/>
+                                        <field name="last_punch"/>
+                                    </group>
+                                </form>
+                                <tree>
+                                    <field name="employee_id"/>
+                                    <field name="employee_att_id"/>
+                                    <field name="first_punch"/>
+                                    <field name="last_punch"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_attendance_report" model="ir.actions.act_window">
+        <field name="name">Attendance Report Per Day</field>
+        <field name="res_model">attendance.report.per.day</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_attendance_report_root" name="Attendance Report"/>
+    <menuitem id="menu_attendance_report_per_day" name="Per Day"
+              parent="menu_attendance_report_root" action="action_attendance_report"/>
+</odoo>
