@@ -1,48 +1,15 @@
-from odoo import models, fields
+from odoo import models, fields, api
 
-# SSC Labours
-class SSC_Labours_Attendance_Line(models.Model):
-    _name = 'ssc.labours.attendance.line'
-    _description = 'SSC Labours Attendance Line'
+class AttendanceReportLine(models.Model):
+    _name = 'attendance.report.line'
+    _description = 'Attendance Report Line'
 
-    report_id = fields.Many2one('attendance.report.per.day', string='Report', ondelete='cascade')
-    employee_id = fields.Many2one('x_employeeslist', string='Employee')
-    employee_att_id = fields.Char(related='employee_id.x_studio_attendance_id', string='Employee Att ID')
+    employee_id = fields.Many2one('x_employeeslist', string='Employee Name')
+    employee_att_id = fields.Char(string='Employee Att ID', compute='_compute_att_id')
     first_punch = fields.Datetime(string='First Punch')
     last_punch = fields.Datetime(string='Last Punch')
 
-
-# RA Labours
-class RA_Labours_Attendance_Line(models.Model):
-    _name = 'ra.labours.attendance.line'
-    _description = 'RA Labours Attendance Line'
-
-    report_id = fields.Many2one('attendance.report.per.day', string='Report', ondelete='cascade')
-    employee_id = fields.Many2one('x_employeeslist', string='Employee')
-    employee_att_id = fields.Char(related='employee_id.x_studio_attendance_id', string='Employee Att ID')
-    first_punch = fields.Datetime(string='First Punch')
-    last_punch = fields.Datetime(string='Last Punch')
-
-
-# SSC Staff
-class SSC_Staff_Attendance_Line(models.Model):
-    _name = 'ssc.staff.attendance.line'
-    _description = 'SSC Staff Attendance Line'
-
-    report_id = fields.Many2one('attendance.report.per.day', string='Report', ondelete='cascade')
-    employee_id = fields.Many2one('x_employeeslist', string='Employee')
-    employee_att_id = fields.Char(related='employee_id.x_studio_attendance_id', string='Employee Att ID')
-    first_punch = fields.Datetime(string='First Punch')
-    last_punch = fields.Datetime(string='Last Punch')
-
-
-# RA Staff
-class RA_Staff_Attendance_Line(models.Model):
-    _name = 'ra.staff.attendance.line'
-    _description = 'RA Staff Attendance Line'
-
-    report_id = fields.Many2one('attendance.report.per.day', string='Report', ondelete='cascade')
-    employee_id = fields.Many2one('x_employeeslist', string='Employee')
-    employee_att_id = fields.Char(related='employee_id.x_studio_attendance_id', string='Employee Att ID')
-    first_punch = fields.Datetime(string='First Punch')
-    last_punch = fields.Datetime(string='Last Punch')
+    @api.depends('employee_id')
+    def _compute_att_id(self):
+        for line in self:
+            line.employee_att_id = line.employee_id.x_studio_attendance_id if line.employee_id else ''
