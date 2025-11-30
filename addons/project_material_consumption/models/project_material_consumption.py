@@ -304,7 +304,7 @@ class ProjectMaterialConsumptionBoqLine(models.Model):
             else:
                 value = (rec.quantity_needed or 0) - (rec.quantity_ordered or 0)
                 rec.balance_to_order = value if value > 0 else 0
-
+# ===== Update value  =====
     @api.depends('quantity_needed', 'quantity_consumed')
     def _compute_balance_to_use(self):
         for rec in self:
