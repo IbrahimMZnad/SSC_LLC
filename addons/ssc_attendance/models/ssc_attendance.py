@@ -226,7 +226,7 @@ class SSCAttendanceLine(models.Model):
                 r.total_time = min((r.last_punch - r.first_punch).total_seconds() / 3600, 8)
             else:
                 r.total_time = 0
-
+ؤ
     @api.depends('first_punch', 'last_punch')
     def _compute_total_ot(self):
         for r in self:
