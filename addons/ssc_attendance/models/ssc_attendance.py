@@ -19,9 +19,6 @@ class SSCAttendance(models.Model):
         ('unique_date', 'unique(date)', 'Attendance record already exists for this date!')
     ]
 
-    # -------------------------
-    # Main Fields
-    # -------------------------
     name = fields.Char(string="Name", required=True, default=lambda self: str(date.today()))
     date = fields.Date(string="Date", default=fields.Date.context_today)
     type = fields.Selection(
@@ -32,17 +29,11 @@ class SSCAttendance(models.Model):
     day_name = fields.Char(string="Day Name", compute="_compute_day_name", store=True)
     line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
 
-    # -------------------------
-    # Compute Day Name
-    # -------------------------
     @api.depends('date')
     def _compute_day_name(self):
         for rec in self:
             rec.day_name = rec.date.strftime('%A') if rec.date else ''
 
-    # -------------------------
-    # Auto-create daily attendance
-    # -------------------------
     @api.model
     def create_daily_attendance(self):
         today = fields.Date.context_today(self)
@@ -62,9 +53,6 @@ class SSCAttendance(models.Model):
                 self.create(vals)
             current_date += timedelta(days=1)
 
-    # -------------------------
-    # Override create to populate lines
-    # -------------------------
     @api.model
     def create(self, vals):
         record = super().create(vals)
@@ -72,9 +60,6 @@ class SSCAttendance(models.Model):
             record._populate_lines()
         return record
 
-    # -------------------------
-    # Populate attendance lines for employees
-    # -------------------------
     def _populate_lines(self):
         self.ensure_one()
         Employee = self.env['x_employeeslist']
@@ -91,17 +76,11 @@ class SSCAttendance(models.Model):
         if lines:
             self.write({'line_ids': lines})
 
-    # -------------------------
-    # Normalize badge number
-    # -------------------------
     def _normalize_badge(self, s):
         if not s:
             return ''
         return re.sub(r'[^A-Za-z0-9]', '', str(s)).upper()
 
-    # -------------------------
-    # Fetch BioCloud Data
-    # -------------------------
     def fetch_bioclock_data(self):
         url = "https://57.biocloud.me:8199/api_gettransctions"
         token = "fa83e149dabc49d28c477ea557016d03"
@@ -114,12 +93,13 @@ class SSCAttendance(models.Model):
         errors = []
 
         Employee = self.env['x_employeeslist']
-
-        badge_map = {}
-        for emp in Employee.search([('x_studio_attendance_id', '!=', False)]):
-            badge_map[self._normalize_badge(emp.x_studio_attendance_id or '')] = emp
+        badge_map = {self._normalize_badge(emp.x_studio_attendance_id or ''): emp
+                     for emp in Employee.search([('x_studio_attendance_id', '!=', False)])}
 
         for attendance in self.search([]):
+            # مسح كل الأسطر قبل إضافة البيانات الجديدة
+            attendance.line_ids.unlink()
+
             start_dt_utc = datetime.combine(attendance.date, datetime.min.time()).replace(tzinfo=pytz.utc)
             end_dt_utc = datetime.combine(attendance.date, datetime.max.time()).replace(tzinfo=pytz.utc)
             payload = {
@@ -150,11 +130,9 @@ class SSCAttendance(models.Model):
                     verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
                     badge_number = trx.get("BadgeNumber")
                     device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
-
                     if not (verify_time_str and badge_number):
                         errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
                         continue
-
                     verify_dt = None
                     try:
                         verify_dt = datetime.fromisoformat(verify_time_str)
@@ -196,58 +174,31 @@ class SSCAttendance(models.Model):
                 for (badge_clean, v_date), events in groups.items():
                     try:
                         events_sorted = sorted(events, key=lambda x: x[0])
-                        if len(events_sorted) == 1:
-                            first_dt_utc = last_dt_utc = events_sorted[0][0]
-                        else:
-                            first_dt_utc = events_sorted[0][0]
-                            last_dt_utc = events_sorted[-1][0]
+                        first_dt_utc = events_sorted[0][0]
+                        last_dt_utc = events_sorted[-1][0] if len(events_sorted) > 1 else first_dt_utc
 
                         device_events = defaultdict(list)
                         for dt, device, _ in events_sorted:
-                            device_key = device or ''
-                            device_events[device_key].append(dt)
+                            device_events[device or ''].append(dt)
+                        device_spans = {dev: max(dts) - min(dts) if dts else timedelta(0) for dev, dts in device_events.items()}
+                        chosen_device = max(device_spans.items(), key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min))[0] if device_spans else ''
 
-                        device_spans = {}
-                        for dev, dts in device_events.items():
-                            if not dts:
-                                device_spans[dev] = timedelta(0)
-                            else:
-                                device_spans[dev] = max(dts) - min(dts)
-
-                        chosen_device = ''
-                        if device_spans:
-                            chosen_device = max(
-                                device_spans.items(),
-                                key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min)
-                            )[0]
-                        else:
-                            chosen_device = ''
-
-                        employee = employee_cache.get(badge_clean)
-                        if not employee:
-                            emp_found = badge_map.get(badge_clean)
-                            if emp_found:
-                                employee_cache[badge_clean] = emp_found
-                                employee = emp_found
+                        employee = employee_cache.get(badge_clean) or badge_map.get(badge_clean)
                         if not employee:
                             errors.append(f"No employee match for badge {badge_clean} on {v_date}")
                             continue
+                        employee_cache[badge_clean] = employee
 
                         matched_employee += 1
                         attendance = attendance_cache.get(v_date)
                         if not attendance:
-                            attendance = self.search([('date', '=', v_date)], limit=1)
-                            if not attendance:
-                                attendance = self.create({
-                                    'name': str(v_date),
-                                    'date': v_date,
-                                    'type': 'Off Day' if v_date.weekday() == 4 else 'Regular Day'
-                                })
+                            attendance = self.create({
+                                'name': str(v_date),
+                                'date': v_date,
+                                'type': 'Off Day' if v_date.weekday() == 4 else 'Regular Day'
+                            })
                             attendance_cache[v_date] = attendance
                         matched_attendance += 1
-
-                        first_punch_str = fields.Datetime.to_string(first_dt_utc)
-                        last_punch_str = fields.Datetime.to_string(last_dt_utc)
 
                         line_vals = {
                             'employee_id': employee.id,
@@ -255,32 +206,13 @@ class SSCAttendance(models.Model):
                             'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
                             'staff': employee.x_studio_engineeroffice_staff,
                             'on_leave': employee.x_studio_on_leave,
-                            'first_punch': first_punch_str,
-                            'last_punch': last_punch_str,
+                            'first_punch': fields.Datetime.to_string(first_dt_utc),
+                            'last_punch': fields.Datetime.to_string(last_dt_utc),
                             'punch_machine_id': chosen_device or '',
                             'error_note': None
                         }
 
-                        existing_line = attendance.line_ids.filtered(lambda l: l.employee_id and l.employee_id.id == employee.id)
-                        if existing_line:
-                            try:
-                                existing_first_dt = fields.Datetime.from_string(existing_line.first_punch) if existing_line.first_punch else None
-                            except Exception:
-                                existing_first_dt = None
-                            try:
-                                existing_last_dt = fields.Datetime.from_string(existing_line.last_punch) if existing_line.last_punch else None
-                            except Exception:
-                                existing_last_dt = None
-                            chosen_first_dt = min([d for d in (existing_first_dt, first_dt_utc) if d is not None])
-                            chosen_last_dt = max([d for d in (existing_last_dt, last_dt_utc) if d is not None])
-                            existing_line.write({
-                                'first_punch': fields.Datetime.to_string(chosen_first_dt) if chosen_first_dt else False,
-                                'last_punch': fields.Datetime.to_string(chosen_last_dt) if chosen_last_dt else False,
-                                'punch_machine_id': chosen_device or (existing_line.punch_machine_id or ''),
-                                'error_note': None
-                            })
-                        else:
-                            attendance.write({'line_ids': [(0, 0, line_vals)]})
+                        attendance.write({'line_ids': [(0, 0, line_vals)]})
                         synced_count += 1
 
                     except Exception as sub_e:
@@ -311,9 +243,6 @@ class SSCAttendance(models.Model):
             }
         }
 
-    # -------------------------
-    # Transfer to x_daily_attendance
-    # -------------------------
     def transfer_to_x_daily_attendance(self):
         Daily = self.env['x_daily_attendance']
         for attendance in self:
@@ -331,31 +260,29 @@ class SSCAttendance(models.Model):
                     existing_sheet = parent.x_studio_attendance_sheet.filtered(
                         lambda l: l.x_studio_id == (line.attendance_id or '')
                     )
+                    if not existing_sheet:
+                        continue
                     vals = {
                         'x_studio_id': line.attendance_id or '',
                         'x_studio_absent': bool(line.absent),
                         'x_studio_project': line.project_id.id if line.project_id else False,
                         'x_studio_overtime_hrs': line.total_ot if line.total_ot else 0.0,
                     }
-                    if existing_sheet:
-                        existing_sheet.write(vals)
-                    else:
-                        parent.write({'x_studio_attendance_sheet': [(0, 0, vals)]})
+                    existing_sheet.write(vals)
 
                 elif attendance.type == 'Off Day':
                     existing_sheet = parent.x_studio_off_days_attendance_sheet.filtered(
                         lambda l: l.x_studio_id == (line.attendance_id or '')
                     )
+                    if not existing_sheet:
+                        continue
                     vals = {
                         'x_studio_id': line.attendance_id or '',
                         'x_studio_project': line.project_id.id if line.project_id else False,
                         'x_studio_overtime_hrs': (line.total_time + line.total_ot)
                         if (line.total_time or line.total_ot) else 0.0,
                     }
-                    if existing_sheet:
-                        existing_sheet.write(vals)
-                    else:
-                        parent.write({'x_studio_off_days_attendance_sheet': [(0, 0, vals)]})
+                    existing_sheet.write(vals)
 
         return {
             'type': 'ir.actions.client',
@@ -412,7 +339,7 @@ class SSCAttendanceLine(models.Model):
                     rec.project_id = False
             else:
                 rec.project_id = False
-                
+
     @api.depends('employee_id')
     def _compute_company(self):
         for rec in self:
@@ -441,9 +368,6 @@ class SSCAttendanceLine(models.Model):
                 rec.total_ot = hours - 8.0 if hours > 8.0 else 0.0
             else:
                 rec.total_ot = 0.0
-
-
-
 
     @api.depends('first_punch', 'employee_id')
     def _compute_absent(self):
