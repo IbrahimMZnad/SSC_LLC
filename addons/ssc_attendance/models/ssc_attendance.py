@@ -97,9 +97,7 @@ class SSCAttendance(models.Model):
                      for emp in Employee.search([('x_studio_attendance_id', '!=', False)])}
 
         for attendance in self.search([]):
-            # مسح كل الأسطر قبل إضافة البيانات الجديدة
-            attendance.line_ids.unlink()
-
+            
             start_dt_utc = datetime.combine(attendance.date, datetime.min.time()).replace(tzinfo=pytz.utc)
             end_dt_utc = datetime.combine(attendance.date, datetime.max.time()).replace(tzinfo=pytz.utc)
             payload = {
