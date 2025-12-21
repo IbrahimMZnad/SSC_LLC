@@ -264,10 +264,14 @@ class SSCAttendance(models.Model):
                         continue
                     vals = {
                         'x_studio_id': line.attendance_id or '',
-                        'x_studio_absent': bool(line.absent),
                         'x_studio_project': line.project_id.id if line.project_id else False,
                         'x_studio_overtime_hrs': line.total_ot if line.total_ot else 0.0,
                     }
+
+                    # نقل الغياب فقط إذا كان Absent = True
+                    if line.absent:
+                        vals['x_studio_absent'] = True
+
                     existing_sheet.write(vals)
 
                 elif attendance.type == 'Off Day':
