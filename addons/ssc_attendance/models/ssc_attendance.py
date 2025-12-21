@@ -82,140 +82,169 @@ class SSCAttendance(models.Model):
         return re.sub(r'[^A-Za-z0-9]', '', str(s)).upper()
 
     def fetch_bioclock_data(self):
-    url = "https://57.biocloud.me:8199/api_gettransctions"
-    token = "fa83e149dabc49d28c477ea557016d03"
-    headers = {"token": token, "Content-Type": "application/json"}
+        url = "https://57.biocloud.me:8199/api_gettransctions"
+        token = "fa83e149dabc49d28c477ea557016d03"
+        headers = {"token": token, "Content-Type": "application/json"}
 
-    synced_count = 0
-    total_records = 0
-    matched_attendance = 0
-    matched_employee = 0
-    errors = []
+        synced_count = 0
+        total_records = 0
+        matched_attendance = 0
+        matched_employee = 0
+        errors = []
 
-    Employee = self.env['x_employeeslist']
-    badge_map = {
-        self._normalize_badge(emp.x_studio_attendance_id or ''): emp
-        for emp in Employee.search([('x_studio_attendance_id', '!=', False)])
-    }
+        Employee = self.env['x_employeeslist']
+        badge_map = {self._normalize_badge(emp.x_studio_attendance_id or ''): emp
+                     for emp in Employee.search([('x_studio_attendance_id', '!=', False)])}
 
-    for attendance in self.search([]):
+        for attendance in self.search([]):
 
-        # ✅ Cache كل السطور الموجودة مسبقًا (مهم جداً)
-        existing_lines = {
-            line.employee_id.id: line
-            for line in attendance.line_ids
-            if line.employee_id
-        }
+            start_dt_utc = datetime.combine(attendance.date, datetime.min.time()).replace(tzinfo=pytz.utc)
+            end_dt_utc = datetime.combine(attendance.date, datetime.max.time()).replace(tzinfo=pytz.utc)
+            payload = {
+                "StartDate": start_dt_utc.strftime("%Y-%m-%d %H:%M:%S"),
+                "EndDate": end_dt_utc.strftime("%Y-%m-%d %H:%M:%S")
+            }
 
-        start_dt_utc = datetime.combine(attendance.date, datetime.min.time()).replace(tzinfo=pytz.utc)
-        end_dt_utc = datetime.combine(attendance.date, datetime.max.time()).replace(tzinfo=pytz.utc)
-
-        payload = {
-            "StartDate": start_dt_utc.strftime("%Y-%m-%d %H:%M:%S"),
-            "EndDate": end_dt_utc.strftime("%Y-%m-%d %H:%M:%S")
-        }
-
-        try:
-            response = requests.post(url, headers=headers, json=payload, timeout=30)
-            if response.status_code != 200:
-                errors.append(f"Error fetching data for {attendance.date}: {response.status_code}")
-                continue
-
-            data = response.json()
-            transactions = data.get("message") or data.get("data") or []
-            if not transactions:
-                continue
-
-            groups = defaultdict(list)
-
-            for trx in transactions:
-                total_records += 1
-
-                verify_type = (trx.get("VerifyType") or '').lower()
-                if verify_type == 'interruption':
+            try:
+                response = requests.post(url, headers=headers, json=payload, timeout=30)
+                if response.status_code != 200:
+                    errors.append(f"Error fetching data for {attendance.date}: {response.status_code} - {response.text}")
+                    continue
+                data = response.json()
+                if "result" in data and data["result"] not in ("Success", "OK"):
+                    errors.append(f"Unexpected response for {attendance.date}: {data.get('message', '')}")
                     continue
 
-                verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
-                badge_number = trx.get("BadgeNumber")
-                device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
+                transactions = data.get("message") or data.get("data") or []
+                if transactions is None:
+                    transactions = []
 
-                if not verify_time_str or not badge_number:
-                    continue
-
-                try:
-                    verify_dt = datetime.fromisoformat(verify_time_str)
-                except Exception:
-                    continue
-
-                if verify_dt.tzinfo is None:
-                    verify_dt = SERVER_TZ.localize(verify_dt)
-
-                verify_dt_utc = verify_dt.astimezone(pytz.utc)
-                verify_date = verify_dt.astimezone(SERVER_TZ).date()
-                badge_clean = self._normalize_badge(badge_number)
-
-                if not badge_clean:
-                    continue
-
-                groups[(badge_clean, verify_date)].append((verify_dt_utc, device_serial or ''))
-
-            for (badge_clean, v_date), events in groups.items():
-                try:
-                    events = sorted(events, key=lambda x: x[0])
-                    first_dt_utc = events[0][0]
-                    last_dt_utc = events[-1][0]
-
-                    employee = badge_map.get(badge_clean)
-                    if not employee:
+                groups = defaultdict(list)
+                for trx in transactions:
+                    total_records += 1
+                    verify_type = (trx.get("VerifyType") or '').strip()
+                    if verify_type and verify_type.lower() == 'interruption':
+                        continue
+                    verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
+                    badge_number = trx.get("BadgeNumber")
+                    device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
+                    if not (verify_time_str and badge_number):
+                        errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
+                        continue
+                    verify_dt = None
+                    try:
+                        verify_dt = datetime.fromisoformat(verify_time_str)
+                    except Exception:
+                        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
+                            try:
+                                verify_dt = datetime.strptime(verify_time_str, fmt)
+                                break
+                            except Exception:
+                                continue
+                    if not verify_dt:
+                        errors.append(f"Unparseable VerifyTime: {verify_time_str}")
                         continue
 
-                    matched_employee += 1
-                    matched_attendance += 1
-
-                    line_vals = {
-                        'employee_id': employee.id,
-                        'attendance_id': employee.x_studio_attendance_id or '',
-                        'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
-                        'staff': employee.x_studio_engineeroffice_staff,
-                        'on_leave': employee.x_studio_on_leave,
-                        'first_punch': fields.Datetime.to_string(first_dt_utc),
-                        'last_punch': fields.Datetime.to_string(last_dt_utc),
-                        'punch_machine_id': events[0][1],
-                        'error_note': None
-                    }
-
-                    line = existing_lines.get(employee.id)
-                    if line:
-                        line.write(line_vals)
+                    if verify_dt.tzinfo is None:
+                        try:
+                            verify_dt = SERVER_TZ.localize(verify_dt)
+                        except Exception:
+                            verify_dt = pytz.utc.localize(verify_dt)
                     else:
+                        try:
+                            verify_dt = verify_dt.astimezone(pytz.utc).astimezone(verify_dt.tzinfo)
+                        except Exception:
+                            verify_dt = pytz.utc.localize(verify_dt.replace(tzinfo=None))
+
+                    verify_dt_server = verify_dt.astimezone(SERVER_TZ)
+                    verify_date = verify_dt_server.date()
+                    verify_dt_utc = verify_dt.astimezone(pytz.utc)
+                    badge_clean = self._normalize_badge(badge_number)
+                    if not badge_clean:
+                        errors.append(f"Empty badge after normalize: {badge_number}")
+                        continue
+
+                    groups[(badge_clean, verify_date)].append((verify_dt_utc, device_serial or '', trx))
+
+                attendance_cache = {attendance.date: attendance}
+                employee_cache = {}
+
+                for (badge_clean, v_date), events in groups.items():
+                    try:
+                        events_sorted = sorted(events, key=lambda x: x[0])
+                        first_dt_utc = events_sorted[0][0]
+                        last_dt_utc = events_sorted[-1][0] if len(events_sorted) > 1 else first_dt_utc
+
+                        device_events = defaultdict(list)
+                        for dt, device, _ in events_sorted:
+                            device_events[device or ''].append(dt)
+                        device_spans = {dev: max(dts) - min(dts) if dts else timedelta(0) for dev, dts in device_events.items()}
+                        chosen_device = max(device_spans.items(), key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min))[0] if device_spans else ''
+
+                        employee = employee_cache.get(badge_clean) or badge_map.get(badge_clean)
+                        if not employee:
+                            errors.append(f"No employee match for badge {badge_clean} on {v_date}")
+                            continue
+                        employee_cache[badge_clean] = employee
+
+                        matched_employee += 1
+                        attendance = attendance_cache.get(v_date)
+                        if not attendance:
+                            attendance = self.create({
+                                'name': str(v_date),
+                                'date': v_date,
+                                'type': 'Off Day' if v_date.weekday() == 4 else 'Regular Day'
+                            })
+                            attendance_cache[v_date] = attendance
+                        matched_attendance += 1
+                        line = existing_lines.get(employee.id)
+                        if line:
+                            line.write(line_vals)
+                        else:
+                            attendance.write({'line_ids': [(0, 0, line_vals)]})
+
+                        line_vals = {
+                            'employee_id': employee.id,
+                            'attendance_id': employee.x_studio_attendance_id or '',
+                            'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
+                            'staff': employee.x_studio_engineeroffice_staff,
+                            'on_leave': employee.x_studio_on_leave,
+                            'first_punch': fields.Datetime.to_string(first_dt_utc),
+                            'last_punch': fields.Datetime.to_string(last_dt_utc),
+                            'punch_machine_id': chosen_device or '',
+                            'error_note': None
+                        }
+
                         attendance.write({'line_ids': [(0, 0, line_vals)]})
+                        synced_count += 1
 
-                    synced_count += 1
+                    except Exception as sub_e:
+                        errors.append(f"Error processing group {badge_clean} {v_date}: {sub_e}")
+                        _logger.exception("Error processing group %s %s: %s", badge_clean, v_date, sub_e)
+                        continue
 
-                except Exception as sub_e:
-                    errors.append(str(sub_e))
-                    _logger.exception(sub_e)
+            except Exception as e:
+                errors.append(f"Error fetching BioCloud data for {attendance.date}: {e}")
+                _logger.exception("Error fetching BioCloud data for %s: %s", attendance.date, e)
+                continue
 
-        except Exception as e:
-            errors.append(str(e))
-            _logger.exception(e)
+        _logger.info(
+            'BioCloud Sync: %s records synced. Total received: %s Matched attendance days: %s Matched employees: %s Errors: %s',
+            synced_count, total_records, matched_attendance, matched_employee, len(errors)
+        )
 
-    _logger.info(
-        "BioCloud Sync Done | Synced: %s | Total: %s | Errors: %s",
-        synced_count, total_records, len(errors)
-    )
-
-    return {
-        'type': 'ir.actions.client',
-        'tag': 'display_notification',
-        'params': {
-            'title': 'BioCloud Sync',
-            'message': f'Synced: {synced_count} | Errors: {len(errors)}',
-            'type': 'success',
-            'sticky': False,
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'BioCloud Sync',
+                'message': f'{synced_count} records synced. Total received: {total_records} '
+                           f'Matched attendance days: {matched_attendance} Matched employees: {matched_employee} '
+                           f'Errors: {len(errors)}',
+                'type': 'success' if synced_count > 0 else 'warning',
+                'sticky': False,
+            }
         }
-    }
-
 
     def transfer_to_x_daily_attendance(self):
         Daily = self.env['x_daily_attendance']
