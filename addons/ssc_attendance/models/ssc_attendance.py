@@ -41,16 +41,16 @@ class SSCAttendance(models.Model):
         start_date = last_record.date if last_record else today
         if not start_date:
             start_date = today
+
         current_date = start_date
         while current_date <= today:
             existing = self.search([('date', '=', current_date)], limit=1)
             if not existing:
-                vals = {
+                self.create({
                     'name': str(current_date),
                     'date': current_date,
                     'type': 'Off Day' if current_date.weekday() == 4 else 'Regular Day'
-                }
-                self.create(vals)
+                })
             current_date += timedelta(days=1)
 
     @api.model
@@ -64,12 +64,13 @@ class SSCAttendance(models.Model):
         self.ensure_one()
         Employee = self.env['x_employeeslist']
         employees = Employee.search([])
+
         lines = []
         for emp in employees:
             lines.append((0, 0, {
                 'employee_id': emp.id,
                 'attendance_id': emp.x_studio_attendance_id or '',
-                'company_id': emp.x_studio_company.id if getattr(emp, 'x_studio_company', False) else False,
+                'company_id': emp.x_studio_company.id if emp.x_studio_company else False,
                 'staff': emp.x_studio_engineeroffice_staff,
                 'on_leave': emp.x_studio_on_leave,
             }))
@@ -86,216 +87,134 @@ class SSCAttendance(models.Model):
         token = "fa83e149dabc49d28c477ea557016d03"
         headers = {"token": token, "Content-Type": "application/json"}
 
-        synced_count = 0
-        total_records = 0
-        matched_attendance = 0
-        matched_employee = 0
-        errors = []
-
         Employee = self.env['x_employeeslist']
-        badge_map = {self._normalize_badge(emp.x_studio_attendance_id or ''): emp
-                     for emp in Employee.search([('x_studio_attendance_id', '!=', False)])}
+        badge_map = {
+            self._normalize_badge(emp.x_studio_attendance_id or ''): emp
+            for emp in Employee.search([('x_studio_attendance_id', '!=', False)])
+        }
 
         for attendance in self.search([]):
-            
+
+            # ✅ Cache للأسطر الموجودة
+            existing_lines = {
+                line.employee_id.id: line
+                for line in attendance.line_ids
+                if line.employee_id
+            }
+
             start_dt_utc = datetime.combine(attendance.date, datetime.min.time()).replace(tzinfo=pytz.utc)
             end_dt_utc = datetime.combine(attendance.date, datetime.max.time()).replace(tzinfo=pytz.utc)
+
             payload = {
                 "StartDate": start_dt_utc.strftime("%Y-%m-%d %H:%M:%S"),
                 "EndDate": end_dt_utc.strftime("%Y-%m-%d %H:%M:%S")
             }
 
-            try:
-                response = requests.post(url, headers=headers, json=payload, timeout=30)
-                if response.status_code != 200:
-                    errors.append(f"Error fetching data for {attendance.date}: {response.status_code} - {response.text}")
+            response = requests.post(url, headers=headers, json=payload, timeout=30)
+            data = response.json()
+            transactions = data.get("message") or data.get("data") or []
+
+            groups = defaultdict(list)
+
+            for trx in transactions:
+                verify_time = trx.get("VerifyTime") or trx.get("VerifyDate")
+                badge = self._normalize_badge(trx.get("BadgeNumber"))
+                device = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
+
+                if not verify_time or not badge:
                     continue
-                data = response.json()
-                if "result" in data and data["result"] not in ("Success", "OK"):
-                    errors.append(f"Unexpected response for {attendance.date}: {data.get('message', '')}")
+
+                try:
+                    verify_dt = datetime.fromisoformat(verify_time)
+                except Exception:
                     continue
 
-                transactions = data.get("message") or data.get("data") or []
-                if transactions is None:
-                    transactions = []
+                if verify_dt.tzinfo is None:
+                    verify_dt = SERVER_TZ.localize(verify_dt)
 
-                groups = defaultdict(list)
-                for trx in transactions:
-                    total_records += 1
-                    verify_type = (trx.get("VerifyType") or '').strip()
-                    if verify_type and verify_type.lower() == 'interruption':
-                        continue
-                    verify_time_str = trx.get("VerifyTime") or trx.get("VerifyDate")
-                    badge_number = trx.get("BadgeNumber")
-                    device_serial = trx.get("DeviceSerialNumber") or trx.get("DeviceSerial")
-                    if not (verify_time_str and badge_number):
-                        errors.append(f"Missing VerifyTime or BadgeNumber: {trx}")
-                        continue
-                    verify_dt = None
-                    try:
-                        verify_dt = datetime.fromisoformat(verify_time_str)
-                    except Exception:
-                        for fmt in ("%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d"):
-                            try:
-                                verify_dt = datetime.strptime(verify_time_str, fmt)
-                                break
-                            except Exception:
-                                continue
-                    if not verify_dt:
-                        errors.append(f"Unparseable VerifyTime: {verify_time_str}")
-                        continue
+                verify_dt_utc = verify_dt.astimezone(pytz.utc)
+                verify_date = verify_dt.astimezone(SERVER_TZ).date()
 
-                    if verify_dt.tzinfo is None:
-                        try:
-                            verify_dt = SERVER_TZ.localize(verify_dt)
-                        except Exception:
-                            verify_dt = pytz.utc.localize(verify_dt)
-                    else:
-                        try:
-                            verify_dt = verify_dt.astimezone(pytz.utc).astimezone(verify_dt.tzinfo)
-                        except Exception:
-                            verify_dt = pytz.utc.localize(verify_dt.replace(tzinfo=None))
+                groups[(badge, verify_date)].append((verify_dt_utc, device))
 
-                    verify_dt_server = verify_dt.astimezone(SERVER_TZ)
-                    verify_date = verify_dt_server.date()
-                    verify_dt_utc = verify_dt.astimezone(pytz.utc)
-                    badge_clean = self._normalize_badge(badge_number)
-                    if not badge_clean:
-                        errors.append(f"Empty badge after normalize: {badge_number}")
-                        continue
+            for (badge, v_date), events in groups.items():
+                if v_date != attendance.date:
+                    continue
 
-                    groups[(badge_clean, verify_date)].append((verify_dt_utc, device_serial or '', trx))
+                employee = badge_map.get(badge)
+                if not employee:
+                    continue
 
-                attendance_cache = {attendance.date: attendance}
-                employee_cache = {}
+                events = sorted(events, key=lambda x: x[0])
+                first_dt = events[0][0]
+                last_dt = events[-1][0]
+                chosen_device = events[-1][1]
 
-                for (badge_clean, v_date), events in groups.items():
-                    try:
-                        events_sorted = sorted(events, key=lambda x: x[0])
-                        first_dt_utc = events_sorted[0][0]
-                        last_dt_utc = events_sorted[-1][0] if len(events_sorted) > 1 else first_dt_utc
+                line_vals = {
+                    'employee_id': employee.id,
+                    'attendance_id': employee.x_studio_attendance_id or '',
+                    'company_id': employee.x_studio_company.id if employee.x_studio_company else False,
+                    'staff': employee.x_studio_engineeroffice_staff,
+                    'on_leave': employee.x_studio_on_leave,
+                    'first_punch': fields.Datetime.to_string(first_dt),
+                    'last_punch': fields.Datetime.to_string(last_dt),
+                    'punch_machine_id': chosen_device or '',
+                }
 
-                        device_events = defaultdict(list)
-                        for dt, device, _ in events_sorted:
-                            device_events[device or ''].append(dt)
-                        device_spans = {dev: max(dts) - min(dts) if dts else timedelta(0) for dev, dts in device_events.items()}
-                        chosen_device = max(device_spans.items(), key=lambda x: (x[1], max(device_events[x[0]]) if device_events[x[0]] else datetime.min))[0] if device_spans else ''
+                line = existing_lines.get(employee.id)
+                if line:
+                    line.write(line_vals)
+                else:
+                    attendance.write({'line_ids': [(0, 0, line_vals)]})
 
-                        employee = employee_cache.get(badge_clean) or badge_map.get(badge_clean)
-                        if not employee:
-                            errors.append(f"No employee match for badge {badge_clean} on {v_date}")
-                            continue
-                        employee_cache[badge_clean] = employee
-
-                        matched_employee += 1
-                        attendance = attendance_cache.get(v_date)
-                        if not attendance:
-                            attendance = self.create({
-                                'name': str(v_date),
-                                'date': v_date,
-                                'type': 'Off Day' if v_date.weekday() == 4 else 'Regular Day'
-                            })
-                            attendance_cache[v_date] = attendance
-                        matched_attendance += 1
-
-                        line_vals = {
-                            'employee_id': employee.id,
-                            'attendance_id': employee.x_studio_attendance_id or '',
-                            'company_id': employee.x_studio_company.id if getattr(employee, 'x_studio_company', False) else False,
-                            'staff': employee.x_studio_engineeroffice_staff,
-                            'on_leave': employee.x_studio_on_leave,
-                            'first_punch': fields.Datetime.to_string(first_dt_utc),
-                            'last_punch': fields.Datetime.to_string(last_dt_utc),
-                            'punch_machine_id': chosen_device or '',
-                            'error_note': None
-                        }
-
-                        attendance.write({'line_ids': [(0, 0, line_vals)]})
-                        synced_count += 1
-
-                    except Exception as sub_e:
-                        errors.append(f"Error processing group {badge_clean} {v_date}: {sub_e}")
-                        _logger.exception("Error processing group %s %s: %s", badge_clean, v_date, sub_e)
-                        continue
-
-            except Exception as e:
-                errors.append(f"Error fetching BioCloud data for {attendance.date}: {e}")
-                _logger.exception("Error fetching BioCloud data for %s: %s", attendance.date, e)
-                continue
-
-        _logger.info(
-            'BioCloud Sync: %s records synced. Total received: %s Matched attendance days: %s Matched employees: %s Errors: %s',
-            synced_count, total_records, matched_attendance, matched_employee, len(errors)
-        )
-
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': 'BioCloud Sync',
-                'message': f'{synced_count} records synced. Total received: {total_records} '
-                           f'Matched attendance days: {matched_attendance} Matched employees: {matched_employee} '
-                           f'Errors: {len(errors)}',
-                'type': 'success' if synced_count > 0 else 'warning',
-                'sticky': False,
-            }
-        }
+        return True
 
     def transfer_to_x_daily_attendance(self):
         Daily = self.env['x_daily_attendance']
+        today = fields.Date.context_today(self)
+
         for attendance in self:
             for line in attendance.line_ids:
                 if not line.company_id:
                     continue
+
                 parent = Daily.search([
                     ('x_studio_todays_date', '=', attendance.date),
                     ('x_studio_company', '=', line.company_id.id)
                 ], limit=1)
+
                 if not parent:
                     continue
 
                 if attendance.type == 'Regular Day':
-                    existing_sheet = parent.x_studio_attendance_sheet.filtered(
+                    sheet = parent.x_studio_attendance_sheet.filtered(
                         lambda l: l.x_studio_id == (line.attendance_id or '')
                     )
-                    if not existing_sheet:
+                    if not sheet:
                         continue
+
                     vals = {
                         'x_studio_id': line.attendance_id or '',
                         'x_studio_project': line.project_id.id if line.project_id else False,
-                        'x_studio_overtime_hrs': line.total_ot if line.total_ot else 0.0,
+                        'x_studio_overtime_hrs': line.total_ot or 0.0,
+                        'x_studio_absent': True if (attendance.date < today and line.absent) else False
                     }
-
-                    # نقل الغياب فقط إذا كان Absent = True
-                    if line.absent:
-                        vals['x_studio_absent'] = True
-
-                    existing_sheet.write(vals)
+                    sheet.write(vals)
 
                 elif attendance.type == 'Off Day':
-                    existing_sheet = parent.x_studio_off_days_attendance_sheet.filtered(
+                    sheet = parent.x_studio_off_days_attendance_sheet.filtered(
                         lambda l: l.x_studio_id == (line.attendance_id or '')
                     )
-                    if not existing_sheet:
+                    if not sheet:
                         continue
-                    vals = {
+
+                    sheet.write({
                         'x_studio_id': line.attendance_id or '',
                         'x_studio_project': line.project_id.id if line.project_id else False,
-                        'x_studio_overtime_hrs': (line.total_time + line.total_ot)
-                        if (line.total_time or line.total_ot) else 0.0,
-                    }
-                    existing_sheet.write(vals)
+                        'x_studio_overtime_hrs': (line.total_time + line.total_ot) or 0.0,
+                    })
 
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': 'Transfer Finished',
-                'message': 'Transfer to x_daily_attendance completed.',
-                'type': 'success',
-                'sticky': False,
-            }
-        }
+        return True
 
 
 # ------------------------------------------------------------
@@ -305,57 +224,30 @@ class SSCAttendanceLine(models.Model):
     _name = "ssc.attendance.line"
     _description = "Attendance Line"
 
-    external_id = fields.Many2one('ssc.attendance', string="Attendance Reference", ondelete='cascade')
-    employee_id = fields.Many2one('x_employeeslist', string="Employee", required=False)
-    company_id = fields.Many2one('res.company', string="Company", compute="_compute_company", store=True)
-    attendance_id = fields.Char(string="Attendance ID")
-    project_id = fields.Many2one('x_projects_list', string="Project", compute="_compute_project", store=True)
-    punch_machine_id = fields.Char(string="Punch Machine ID")
-    first_punch = fields.Datetime(string="First Punch")
-    last_punch = fields.Datetime(string="Last Punch")
-    total_time = fields.Float(string="Total Time (Hours)", compute="_compute_total_time", store=True)
-    total_ot = fields.Float(string="Total OT (Hours)", compute="_compute_total_ot", store=True)
-    absent = fields.Boolean(string="Absent", compute="_compute_absent", store=True)
-    staff = fields.Boolean(string="Staff", compute="_compute_staff", store=True)
-    on_leave = fields.Boolean(string="On Leave", compute="_compute_on_leave", store=True)
-    error_note = fields.Text(string="Error Note")
-
-    @api.depends('punch_machine_id')
-    def _compute_project(self):
-        mapping = {
-            'VDE2252100257': '47 G+1 Villa Arjan (Townhouses) - 6727777',
-            'VDE2252100409': '47 G+1 Villa Arjan (Townhouses) - 6727777',
-            'VDE2252100345': 'Al Khan G + 15 - 211',
-            'VDE2252100359': 'Al Khan G + 15 - 211',
-        }
-        Project = self.env['x_projects_list']
-        for rec in self:
-            if rec.punch_machine_id:
-                target_name = mapping.get(rec.punch_machine_id)
-                if target_name:
-                    proj = Project.search([('x_name', '=', target_name)], limit=1)
-                    rec.project_id = proj.id if proj else False
-                    if not proj:
-                        rec.error_note = (rec.error_note or '') + f"\nProject not found for name: {target_name}"
-                else:
-                    rec.project_id = False
-            else:
-                rec.project_id = False
+    external_id = fields.Many2one('ssc.attendance', ondelete='cascade')
+    employee_id = fields.Many2one('x_employeeslist')
+    company_id = fields.Many2one('res.company', compute="_compute_company", store=True)
+    attendance_id = fields.Char()
+    project_id = fields.Many2one('x_projects_list', compute="_compute_project", store=True)
+    punch_machine_id = fields.Char()
+    first_punch = fields.Datetime()
+    last_punch = fields.Datetime()
+    total_time = fields.Float(compute="_compute_total_time", store=True)
+    total_ot = fields.Float(compute="_compute_total_ot", store=True)
+    absent = fields.Boolean(compute="_compute_absent", store=True)
+    staff = fields.Boolean(compute="_compute_staff", store=True)
+    on_leave = fields.Boolean(compute="_compute_on_leave", store=True)
 
     @api.depends('employee_id')
     def _compute_company(self):
         for rec in self:
-            rec.company_id = rec.employee_id.x_studio_company.id if rec.employee_id and getattr(rec.employee_id, 'x_studio_company', False) else False
+            rec.company_id = rec.employee_id.x_studio_company.id if rec.employee_id and rec.employee_id.x_studio_company else False
 
     @api.depends('first_punch', 'last_punch')
     def _compute_total_time(self):
         for rec in self:
             if rec.first_punch and rec.last_punch:
-                delta = rec.last_punch - rec.first_punch
-                hours = delta.total_seconds() / 3600.0
-                if rec.last_punch.hour >= 14:
-                    hours -= 1.0
-                rec.total_time = 8.0 if hours > 8.0 else hours
+                rec.total_time = min((rec.last_punch - rec.first_punch).total_seconds() / 3600.0, 8.0)
             else:
                 rec.total_time = 0.0
 
@@ -363,20 +255,17 @@ class SSCAttendanceLine(models.Model):
     def _compute_total_ot(self):
         for rec in self:
             if rec.first_punch and rec.last_punch:
-                delta = rec.last_punch - rec.first_punch
-                hours = delta.total_seconds() / 3600.0
-                if rec.last_punch.hour >= 14:
-                    hours -= 1.0
-                rec.total_ot = hours - 8.0 if hours > 8.0 else 0.0
+                hours = (rec.last_punch - rec.first_punch).total_seconds() / 3600.0
+                rec.total_ot = max(hours - 8.0, 0.0)
             else:
                 rec.total_ot = 0.0
 
-    @api.depends('first_punch', 'employee_id')
+    @api.depends('first_punch', 'on_leave', 'external_id.date')
     def _compute_absent(self):
         for rec in self:
             if rec.on_leave:
                 rec.absent = False
-            elif rec.external_id and rec.external_id.date and rec.external_id.date.weekday() == 4:
+            elif rec.external_id and rec.external_id.date.weekday() == 4:
                 rec.absent = False
             else:
                 rec.absent = not bool(rec.first_punch)
