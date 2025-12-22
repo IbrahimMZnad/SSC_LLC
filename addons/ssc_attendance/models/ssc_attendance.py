@@ -266,15 +266,38 @@ class SSCAttendanceLine(models.Model):
         for rec in self:
             if rec.first_punch and rec.last_punch:
                 delta = rec.last_punch - rec.first_punch
-                hours = delta.total_seconds() / 3600
-                rec.total_time = min(hours - 1 if rec.last_punch.hour >= 14 else hours, 8)
+                hours = delta.total_seconds() / 3600.0
+
+                # خصم ساعة بريك إذا الدوام بعد 14
+                if rec.last_punch.hour >= 14:
+                    hours -= 1.0
+
+                # حماية من القيم السالبة
+                hours = max(hours, 0.0)
+
+                # دوام عادي حد أقصى 8 ساعات
+                rec.total_time = min(hours, 8.0)
             else:
-                rec.total_time = 0
+                rec.total_time = 0.0
+
 
     @api.depends('first_punch', 'last_punch')
     def _compute_total_ot(self):
         for rec in self:
-            rec.total_ot = max((rec.total_time or 0) - 8, 0)
+            if rec.first_punch and rec.last_punch:
+                delta = rec.last_punch - rec.first_punch
+                hours = delta.total_seconds() / 3600.0
+
+                if rec.last_punch.hour >= 14:
+                    hours -= 1.0
+
+                hours = max(hours, 0.0)
+
+                # أي شي فوق 8 يعتبر OT
+                rec.total_ot = max(hours - 8.0, 0.0)
+            else:
+                rec.total_ot = 0.0
+
 
     @api.depends('first_punch', 'on_leave', 'external_id')
     def _compute_absent(self):
