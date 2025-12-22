@@ -288,7 +288,7 @@ class SSCAttendanceLine(models.Model):
                 delta = rec.last_punch - rec.first_punch
                 hours = delta.total_seconds() / 3600.0
 
-                if rec.last_punch.hour >= 14:
+                if rec.last_punch.hour >= 9:
                     hours -= 1.0
 
                 hours = max(hours, 0.0)
