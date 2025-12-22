@@ -269,7 +269,7 @@ class SSCAttendanceLine(models.Model):
                 hours = delta.total_seconds() / 3600.0
 
                 # خصم ساعة بريك إذا الدوام بعد 14
-                if rec.last_punch.hour >= 14:
+                if rec.last_punch.hour >= 9:
                     hours -= 1.0
 
                 # حماية من القيم السالبة
