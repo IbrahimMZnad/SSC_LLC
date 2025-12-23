@@ -27,7 +27,7 @@ class SSCAttendance(models.Model):
         default=lambda self: 'Off Day' if date.today().weekday() == 4 else 'Regular Day'
     )
     day_name = fields.Char(string="Day Name", compute="_compute_day_name", store=True)
-     # line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
+    line_ids = fields.One2many('ssc.attendance.line', 'external_id', string="Attendance Lines")
 
     @api.depends('date')
     def _compute_day_name(self):
