@@ -204,11 +204,18 @@ class SSCAttendance(models.Model):
                         lambda l: l.x_studio_id == (line.attendance_id or '')
                     )
                     if sheet:
+                        overtime_hrs = line.total_ot or 0.0
+
+                        # ✅ شرط منع الأوفر تايم
+                        if not sheet.x_studio_overtime:
+                            overtime_hrs = 0.0
+
                         sheet.write({
                             'x_studio_project': line.project_id.id if line.project_id else False,
-                            'x_studio_overtime_hrs': line.total_ot or 0.0,
+                            'x_studio_overtime_hrs': overtime_hrs,
                             'x_studio_absent': bool(line.absent)
                         })
+
 
                 elif attendance.type == 'Off Day':
                     sheet = parent.x_studio_off_days_attendance_sheet.filtered(
