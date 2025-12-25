@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- FORM VIEW -->
+    <record id="view_project_material_consumption_form" model="ir.ui.view">
+        <field name="name">project.material.consumption.form</field>
+        <field name="model">project.material.consumption</field>
+        <field name="arch" type="xml">
+            <form string="Project Material Consumption">
+                <sheet>
+                    <!-- Header Section -->
+                    <group style="border:1px solid #cdd3d8; padding:10px; border-radius:6px; background:#f4f6f8;">
+                        <field name="name" class="o_field_title" style="font-weight:700; font-size:16px;"/>
+                        <field name="company_id"/>
+                    </group>
+
+                    <!-- Notebook Section -->
+                    <notebook>
+                        <!-- PAGE 1: MATERIALS -->
+                        <page string="Materials">
+                            <div class="o_field_widget" style="text-align:center; font-weight:700; font-size:15px; padding:12px; background:#e9f0f5; border-radius:6px; border:1px solid #cdd3d8; margin-bottom:12px;">
+                                This list includes all materials that have undergone movement, whether ordered or consumed on site.
+                            </div>
+
+                            <field name="line_ids" widget="one2many_list" options="{'no_create': False, 'no_edit': False, 'no_open': True}" class="o_list_view">
+                                <list class="text-center" style="border:1px solid #cdd3d8; background:#fafafa;">
+                                    <field name="item"/>
+                                    <field name="unit"/>
+                                    <field name="type_of_material"/>
+                                    <field name="quantity_needed"/>
+                                    <field name="quantity_consumed" attrs="{'invisible':[('quantity_consumed','=',0)]}"/>
+                                    <field name="quantity_ordered" attrs="{'invisible':[('quantity_ordered','=',0)]}"/>
+                                    <field name="balance_to_order"/>
+                                    <field name="balance_to_use"/>
+                                    <field name="stock"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <!-- PAGE 2: BOQ LINES -->
+                        <page string="BOQ Lines">
+                            <div class="o_field_widget" style="text-align:center; font-weight:700; font-size:15px; padding:12px; background:#e9f0f5; border-radius:6px; border:1px solid #cdd3d8; margin-bottom:12px;">
+                                This list includes only the materials that are part of the project BOQ and have undergone movement, whether ordered or consumed on site.
+                            </div>
+
+                            <field name="boq_line_ids" widget="one2many_list" options="{'no_create': False, 'no_edit': False, 'no_open': True}" class="o_list_view">
+                                <list class="text-center" style="border:1px solid #cdd3d8; background:#fafafa;">
+                                    <field name="item"/>
+                                    <field name="unit"/>
+                                    <field name="type_of_material"/>
+                                    <field name="quantity_needed"/>
+                                    <field name="quantity_consumed" attrs="{'invisible':[('quantity_consumed','=',0)]}"/>
+                                    <field name="quantity_ordered" attrs="{'invisible':[('quantity_ordered','=',0)]}"/>
+                                    <field name="balance_to_order"/>
+                                    <field name="balance_to_use"/>
+                                    <field name="stock"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ACTION -->
+    <record id="action_project_material_consumption" model="ir.actions.act_window">
+        <field name="name">Project Material Consumption</field>
+        <field name="res_model">project.material.consumption</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- MENU -->
+    <menuitem id="menu_project_material_consumption_root" name="Project Material Consumption"/>
+    <menuitem id="menu_project_material_consumption_main" name="Project Materials" parent="menu_project_material_consumption_root" action="action_project_material_consumption"/>
+</odoo>

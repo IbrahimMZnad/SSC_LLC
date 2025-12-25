@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <!-- ========================= FORM VIEW ========================= -->
+        <record id="view_stock_transfer_report_form" model="ir.ui.view">
+            <field name="name">stock.transfer.report.form</field>
+            <field name="model">stock.transfer.report</field>
+            <field name="arch" type="xml">
+                <form string="Stock Transfer Report" create="true" edit="true" class="oe_background_grey">
+                    <sheet style="background-color:#f9fafb; padding:25px; border-radius:12px;">
+
+                        <!-- HEADER SECTION -->
+                        <group string="Report Information" col="2" 
+                               style="background-color:#eef3f7; padding:12px; border-radius:8px; margin-bottom:15px;">
+                            <field name="store" nolabel="0"/>
+                            <field name="company" nolabel="0"/>
+                        </group>
+
+                        <!-- NOTEBOOK PAGES -->
+                        <notebook>
+
+                            <!-- ========================= OUTGOING LINES ========================= -->
+                            <page string="📦 Outgoing Lines" 
+                                  style="background-color:#ffffff; padding:15px; border-radius:10px;">
+                                <separator string="Outgoing Materials" 
+                                           style="color:#1F618D; font-weight:bold; margin-bottom:10px;"/>
+                                <field name="outgoing_lines" nolabel="1" widget="sol_o2m">
+                                    <list editable="bottom" create="false" delete="false" multi_edit="false" 
+                                          style="background-color:#fbfcfd;">
+                                        <field name="description" width="150" class="text-center" align="center"/>
+                                        <field name="item" width="150" class="text-center" align="center"/>
+                                        <field name="item_serial_no" width="120" class="text-center" align="center"/>
+                                        <field name="unit" width="100" class="text-center" align="center"/>
+                                        <field name="type_of_material" width="120" class="text-center" align="center"/>
+                                        <field name="date" width="120" class="text-center" align="center"/>
+                                        <field name="quantity" width="100" class="text-center" align="center"/>
+                                        <field name="notes" width="250" class="text-center" align="center"/>
+                                    </list>
+                                </field>
+                            </page>
+
+                            <!-- ========================= INCOMING LINES ========================= -->
+                            <page string="📥 Incoming Lines" 
+                                  style="background-color:#ffffff; padding:15px; border-radius:10px;">
+                                <separator string="Incoming Materials" 
+                                           style="color:#117864; font-weight:bold; margin-bottom:10px;"/>
+                                <field name="incoming_lines" nolabel="1" widget="sol_o2m">
+                                    <list editable="bottom" create="false" delete="false" multi_edit="false" 
+                                          style="background-color:#fbfcfd;">
+                                        <field name="description" width="150" class="text-center" align="center"/>
+                                        <field name="item" width="150" class="text-center" align="center"/>
+                                        <field name="item_serial_no" width="120" class="text-center" align="center"/>
+                                        <field name="unit" width="100" class="text-center" align="center"/>
+                                        <field name="type_of_material" width="120" class="text-center" align="center"/>
+                                        <field name="date" width="120" class="text-center" align="center"/>
+                                        <field name="quantity" width="100" class="text-center" align="center"/>
+                                        <field name="notes" width="250" class="text-center" align="center"/>
+                                    </list>
+                                </field>
+                            </page>
+
+                        </notebook>
+                    </sheet>
+                </form>
+            </field>
+        </record>
+
+        <!-- ========================= ACTION ========================= -->
+        <record id="action_stock_transfer_report" model="ir.actions.act_window">
+            <field name="name">Stock Transfer Report</field>
+            <field name="res_model">stock.transfer.report</field>
+            <field name="view_mode">form,list</field>
+            <field name="view_id" ref="view_stock_transfer_report_form"/>
+        </record>
+
+        <!-- ========================= MENU ========================= -->
+        <menuitem id="menu_stock_transfer_report_root" name="Stock Transfer" sequence="10"/>
+
+        <menuitem id="menu_stock_transfer_report"
+                  name="Transfer Reports"
+                  parent="menu_stock_transfer_report_root"
+                  action="action_stock_transfer_report"
+                  sequence="20"/>
+
+    </data>
+</odoo>
